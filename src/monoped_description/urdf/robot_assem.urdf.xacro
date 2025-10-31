@@ -1,0 +1,122 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="example">
+
+    <xacro:include filename="robot_material.xacro"/>
+    <!-- <xacro:include filename="inertial_macros.xacro"/> -->
+
+
+    <!-- WORLD -->
+
+
+    <link name="world"/>
+
+
+    <!-- BODY -->
+
+
+    <joint name="world_to_base" type="prismatic">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <parent link="world"/>
+        <child link="body_link"/>
+        <axis xyz="0 0 1"/>
+        <limit lower="-0.3" upper="0.3" effort="0" velocity="10"/>
+    </joint>
+
+    <link name="body_link">
+        <visual>
+            <origin xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="../meshes/body.stl"/>
+            </geometry>
+            <material name="red"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="../meshes/body.stl"/>
+            </geometry>
+        </collision>
+    </link>
+
+
+    <!-- UPPER LEG -->
+
+
+    <joint name="body_to_upper_leg" type="fixed">
+        <origin xyz="0 0 -0.075" rpy="0 0 0"/>
+        <parent link="body_link"/>
+        <child link="upper_leg_link"/>
+    </joint>
+
+
+    <link name="upper_leg_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+            <geometry>
+                <mesh filename="../meshes/upper_leg.stl"/>
+            </geometry>
+            <material name="white"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="../meshes/upper_leg.stl"/>
+            </geometry>
+        </collision>
+    </link>
+
+
+    <!-- LOWER LEG -->
+
+
+    <joint name="upper_leg_to_lower_leg" type="prismatic">
+        <origin xyz="0 0 -0.06" rpy="0 0 0"/>
+        <parent link="upper_leg_link"/>
+        <child link="lower_leg_link"/>
+        <axis xyz="0 0 1"/>
+        <limit lower="0" upper="0.05" effort="100" velocity="100"/>
+    </joint>
+
+    <link name="lower_leg_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+            <geometry>
+                <mesh filename="../meshes/lower_leg.stl"/>
+            </geometry>
+            <material name="orange"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="../meshes/upper_leg.stl"/>
+            </geometry>
+        </collision>
+    </link>
+
+
+    <!-- FOOT -->
+
+
+    <joint name="lower_leg_to_foot" type="fixed">
+        <origin xyz="0 0 -0.035" rpy="0 0 0"/>
+        <parent link="lower_leg_link"/>
+        <child link="foot_link"/>
+    </joint>
+
+    <link name="foot_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+            <geometry>
+                <mesh filename="../meshes/foot.stl"/>
+            </geometry>
+            <material name="blue"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="../meshes/foot.stl"/>
+            </geometry>
+        </collision>
+    </link>
+
+</robot>

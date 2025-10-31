@@ -1,0 +1,18 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 500  # Hz
+
+    use_sim_time: true 
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    effort_controller:
+      type: effort_controllers/JointGroupEffortController
+
+effort_controller:
+  ros__parameters:
+    joints: 
+      # - world_to_body
+      - upper_leg_to_lower_leg
+      
