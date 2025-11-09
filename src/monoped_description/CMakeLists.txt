@@ -27,7 +27,7 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-  scripts/dummy_script.py
+  scripts/deadbeat_controller.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -50,7 +50,6 @@ install(DIRECTORY
   # add directories here
   launch
   rviz
-  meshes
   config
   urdf
   DESTINATION share/${PROJECT_NAME})

@@ -12,16 +12,16 @@
         <param name="max">100</param>
       </command_interface>
       <state_interface name="position">
-        <param name="initial_value">0.5</param>
+        <param name="initial_value">2</param>
       </state_interface>
       <state_interface name="velocity"/>
       <state_interface name="effort"/>
     </joint>
 
     <joint name="upper_leg_to_lower_leg">
-      <command_interface name="effort">
-        <param name="min">-100</param>
-        <param name="max">100</param>
+      <command_interface name="position">
+        <param name="min">0.0</param>
+        <param name="max">0.09</param>
       </command_interface>
       <state_interface name="position">
         <param name="initial_value">0.0</param>
@@ -38,10 +38,10 @@
     </plugin>
 
     <!-- Sensor Manager (จำเป็นสำหรับ IMU, Lidar, ฯลฯ) -->
-    <plugin filename="libignition-gazebo-sensors-system.so"
+    <!-- <plugin filename="libignition-gazebo-sensors-system.so"
             name="ignition::gazebo::systems::Sensors">
       <render_engine>ogre2</render_engine>
-    </plugin>
+    </plugin> -->
   </gazebo>
 
   <!-- Plugin mimic สำหรับทางด้านซ้าย -->

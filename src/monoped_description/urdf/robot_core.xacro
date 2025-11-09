@@ -12,36 +12,36 @@
 
     <link name="world"/>
 
-
-    <!-- BODY -->
-
-
     <joint name="world_to_body" type="prismatic">
-        <origin xyz="0 0 0.3" rpy="0 0 0"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
         <parent link="world"/>
         <child link="body_link"/>
         <axis xyz="0 0 1"/>
-        <limit lower="-0.3" upper="0.3" effort="1000" velocity="100"/>
+        <limit lower="-10" upper="10" effort="1000" velocity="1000"/>
     </joint>
+
+
+    <!-- BODY -->
+
 
     <link name="body_link">
         <visual>
             <origin xyz="0 0 0"/>
             <geometry>
-                <mesh filename="file:///$(find monoped_description)/meshes/body.stl"/>
+                <box size="${b_x} ${b_y} ${b_z}"/>
             </geometry>
             <material name="red"/>
         </visual>
         <collision>
             <origin xyz="0 0 0"/>
             <geometry>
-                <mesh filename="file:///$(find monoped_description)/meshes/body.stl"/>
+                <box size="${b_x} ${b_y} ${b_z}"/>
             </geometry>
         </collision>
-        <inertial>
-            <mass value="1.51"/>
-            <inertia ixx="1e-3" ixy="0.0" ixz="0.0" iyy="1e-3" iyz="0.0" izz="1e-3"/>
-        </inertial>
+        <xacro:inertial_box mass="${mass_body}" x="${b_x}" y="${b_y}" z="${b_z}">
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </xacro:inertial_box>
+            
     </link>
 
 
@@ -49,7 +49,7 @@
 
 
     <joint name="body_to_upper_leg" type="fixed">
-        <origin xyz="0 0 -0.075" rpy="0 0 0"/>
+        <origin xyz="0 0 -0.125" rpy="0 0 0"/>
         <parent link="body_link"/>
         <child link="upper_leg_link"/>
     </joint>
@@ -57,22 +57,21 @@
 
     <link name="upper_leg_link">
         <visual>
-            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="file:///$(find monoped_description)/meshes/upper_leg.stl"/>
+                <cylinder radius="0.05" length="0.1"/>
             </geometry>
-            <material name="white"/>
+            <material name="yellow"/>
         </visual>
         <collision>
-            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+            <origin xyz="0 0 0"/>
             <geometry>
-                <mesh filename="file:///$(find monoped_description)/meshes/upper_leg.stl"/>
+                <cylinder radius="${ul_r}" length="${ul_l}"/>
             </geometry>
         </collision>
-        <inertial>
-            <mass value="0.211"/>
-            <inertia ixx="1e-3" ixy="0.0" ixz="0.0" iyy="1e-3" iyz="0.0" izz="1e-3"/>
-        </inertial>
+        <xacro:inertial_cylinder mass="${mass_upper_leg}" radius="${ul_r}" length="${ul_l}">
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </xacro:inertial_cylinder>
     </link>
 
 
@@ -80,64 +79,105 @@
 
 
     <joint name="upper_leg_to_lower_leg" type="prismatic">
-        <origin xyz="0 0 -0.06" rpy="0 0 0"/>
+        <origin xyz="0 0 -0.1" rpy="0 0 0"/>
         <parent link="upper_leg_link"/>
         <child link="lower_leg_link"/>
         <axis xyz="0 0 1"/>
-        <limit lower="0" upper="0.05" effort="100" velocity="100"/>
-        <dynamics damping="${joint_damping}"/>
+        <limit lower="0" upper="0.08" effort="1000" velocity="1000"/>
     </joint>
+
+    <gazebo reference="upper_leg_to_lower_leg">
+        <physics>
+            <ode>
+                <spring_stiffness>10.0</spring_stiffness>
+                <spring_reference>0.0</spring_reference>
+            </ode>
+        </physics>
+    </gazebo>
 
     <link name="lower_leg_link">
         <visual>
-            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="file:///$(find monoped_description)/meshes/lower_leg.stl"/>
+                <cylinder radius="${ll_r}" length="${ll_l}"/>
             </geometry>
             <material name="orange"/>
         </visual>
         <collision>
-            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+            <origin xyz="0 0 0"/>
             <geometry>
-                <mesh filename="file:///$(find monoped_description)/meshes/lower_leg.stl"/>
+                <cylinder radius="${ll_r}" length="${ll_l}"/>
             </geometry>
-            <contact_coefficients mu="0" kp="200" kd="0"/>
         </collision>
-        <inertial>
-            <mass value="0.247"/>
-            <inertia ixx="1e-3" ixy="0.0" ixz="0.0" iyy="1e-3" iyz="0.0" izz="1e-3"/>
-        </inertial>
+        <xacro:inertial_cylinder mass="${mass_lower_leg}" radius="${ll_r}" length="${ll_l}">
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </xacro:inertial_cylinder>
     </link>
+
+    <gazebo reference="lower_leg_link">
+        <collision>
+            <surface>
+                <contact>
+                    <ode>
+                        <kp>10.0</kp>
+                    </ode>
+                </contact>
+            </surface>
+        </collision>
+    </gazebo>
 
 
     <!-- FOOT -->
 
 
     <joint name="lower_leg_to_foot" type="fixed">
-        <origin xyz="0 0 -0.035" rpy="0 0 0"/>
+        <origin xyz="0 0 -0.05" rpy="0 0 0"/>
         <parent link="lower_leg_link"/>
         <child link="foot_link"/>
     </joint>
 
     <link name="foot_link">
         <visual>
-            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <mesh filename="file:///$(find monoped_description)/meshes/foot.stl"/>
+                <box size="${f_x} ${f_y} ${f_z}"/>
             </geometry>
             <material name="blue"/>
         </visual>
         <collision>
-            <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+            <origin xyz="0 0 0"/>
             <geometry>
-                <mesh filename="file:///$(find monoped_description)/meshes/foot.stl"/>
+                <box size="${f_x} ${f_y} ${f_z}"/>
             </geometry>
         </collision>
-        <inertial>
-            <mass value="0.186"/>
-            <inertia ixx="1e-3" ixy="0.0" ixz="0.0" iyy="1e-3" iyz="0.0" izz="1e-3"/>
-        </inertial>
+        <xacro:inertial_box mass="${mass_foot}" x="${f_x}" y="${f_y}" z="${f_z}">
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </xacro:inertial_box>
     </link>
 
+
+    <!-- FOOT CONTACT -->
+    
+
+    <joint name="foot_to_foot_contact" type="fixed">
+        <parent link="foot_link"/>
+        <child link="foot_contact"/>
+        <origin xyz="0 0 -${f_z*0.5}"/>
+    </joint>
+
+    <link name="foot_contact">
+        <visual>
+            <origin xyz="0 0 0"/>
+            <geometry>
+                <sphere radius="${fc_r}"/>
+            </geometry>
+            <material name="black"/>
+        </visual>
+    </link>
+
+    <gazebo reference="body_link">
+        <material>Gazebo/Red</material>
+    </gazebo>
+    
 
 </robot>

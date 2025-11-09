@@ -47,48 +47,60 @@ def generate_launch_description():
 
     # Robot state publisher
     state_pub = Node(
-        package='robot_state_publisher', executable='robot_state_publisher',
-        name='robot_state_publisher', output='screen',
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        name='robot_state_publisher',
+        output='screen',
         parameters=[robot_description]
     )
 
-
     # Spawn entity in Gazebo
     spawn_entity = Node(
-        package='ros_gz_sim', executable='create', name='spawn_entity', output='screen',
+        package='ros_gz_sim',
+        executable='create', 
+        name='spawn_entity', 
+        output='screen',
         arguments=[
             '-topic', 'robot_description',
-            '-name', 'lookchoop',
+            '-name', 'soda',
             '-allow_renaming', 'true',
-            '-x', '0.0', '-y', '0.0', '-z', '1.6'
+            '-x', '0.0', '-y', '0.0', '-z', '0'
         ]
     )
 
     # Controller manager spawners
     jsb_spawner = Node(
-        package='controller_manager', executable='spawner', name='spawner_joint_state_broadcaster',
+        package='controller_manager',
+        executable='spawner', 
+        name='spawner_joint_state_broadcaster',
         arguments=['joint_state_broadcaster', '--controller-manager', '/controller_manager'],
     )
 
-    effort_spawner = Node(
-        package='controller_manager', executable='spawner', name='spawner_effort_controller',
-        arguments=['effort_controller', '--controller-manager', '/controller_manager'],
+    position_spawner = Node(
+        package='controller_manager', 
+        executable='spawner', 
+        name='spawner_position_controller',
+        arguments=['position_controller', '--controller-manager', '/controller_manager'],
     )
 
     # ROS <-> Gazebo bridge
     bridge = Node(
-        package='ros_gz_bridge', executable='parameter_bridge', output='screen',
+        package='ros_gz_bridge', 
+        executable='parameter_bridge', 
+        output='screen',
         arguments=[
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
             '/imu_data@sensor_msgs/msg/Imu[gz.msgs.IMU'
         ]
     )
 
-
     # RViz
     rviz_config = os.path.join(desc_pkg, 'rviz', 'config.rviz')
     rviz = Node(
-        package='rviz2', executable='rviz2', name='rviz', output='screen',
+        package='rviz2', 
+        executable='rviz2', 
+        name='rviz', 
+        output='screen',
         arguments=['-d', rviz_config],
         parameters=[{'use_sim_time': use_sim_time}]
     )
@@ -101,6 +113,7 @@ def generate_launch_description():
         gz_sim,
         state_pub,
         spawn_entity,
+
         # After spawning the robot, start the joint_state_broadcaster
         RegisterEventHandler(
             event_handler=OnProcessExit(
@@ -108,11 +121,12 @@ def generate_launch_description():
                 on_exit=[jsb_spawner]
             )
         ),
+
         # After joint_state_broadcaster is active, start the effort controller
         RegisterEventHandler(
             event_handler=OnProcessExit(
                 target_action=jsb_spawner,
-                on_exit=[effort_spawner]
+                on_exit=[position_spawner]
             )
         ),
         bridge,

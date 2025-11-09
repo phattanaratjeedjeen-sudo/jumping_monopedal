@@ -31,7 +31,7 @@ def generate_launch_description():
         package='rviz2',
         executable='rviz2',
         name='rviz',
-        arguments=['-d', rviz_path],
+        arguments=['-d',rviz_path],
         output='screen'
     )
     
@@ -60,5 +60,5 @@ def generate_launch_description():
     return LaunchDescription([
         joint_state_publisher,
         robot_state_publisher,
-        rviz
+        # rviz
     ])
