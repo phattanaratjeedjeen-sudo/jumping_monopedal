@@ -10,7 +10,7 @@
     <!-- WORLD -->
 
 
-    <link name="world"/>
+    <!-- <link name="world"/>
 
     <joint name="world_to_body" type="prismatic">
         <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -18,7 +18,7 @@
         <child link="body_link"/>
         <axis xyz="0 0 1"/>
         <limit lower="-10" upper="10" effort="1000" velocity="1000"/>
-    </joint>
+    </joint> -->
 
 
     <!-- BODY -->
@@ -59,14 +59,14 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <cylinder radius="0.05" length="0.1"/>
+                <cylinder radius="${ul_r}" length="${ul_l}"/>
             </geometry>
             <material name="yellow"/>
         </visual>
         <collision>
-            <origin xyz="0 0 0"/>
+            <origin xyz="0 0 0.025"/>
             <geometry>
-                <cylinder radius="${ul_r}" length="${ul_l}"/>
+                <cylinder radius="${ul_r}" length="${ul_l*0.1}"/>
             </geometry>
         </collision>
         <xacro:inertial_cylinder mass="${mass_upper_leg}" radius="${ul_r}" length="${ul_l}">
@@ -83,17 +83,9 @@
         <parent link="upper_leg_link"/>
         <child link="lower_leg_link"/>
         <axis xyz="0 0 1"/>
-        <limit lower="0" upper="0.08" effort="1000" velocity="1000"/>
+            <limit lower="0" upper="0.08" effort="1000" velocity="1000"/>
+            <dynamics damping="0.0" friction="0.0" spring_reference="0.0" spring_stiffness="1000.0" />
     </joint>
-
-    <gazebo reference="upper_leg_to_lower_leg">
-        <physics>
-            <ode>
-                <spring_stiffness>10.0</spring_stiffness>
-                <spring_reference>0.0</spring_reference>
-            </ode>
-        </physics>
-    </gazebo>
 
     <link name="lower_leg_link">
         <visual>
@@ -119,7 +111,7 @@
             <surface>
                 <contact>
                     <ode>
-                        <kp>10.0</kp>
+                        <kp>100000.0</kp>
                     </ode>
                 </contact>
             </surface>

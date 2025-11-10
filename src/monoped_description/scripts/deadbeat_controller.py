@@ -3,10 +3,8 @@
 from monoped_description.dummy_module import dummy_function, dummy_var
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import JointState
 from tf2_msgs.msg import TFMessage
 from std_msgs.msg import Float64MultiArray
-import time
 import numpy as np
 import random
 from math import sqrt
@@ -17,30 +15,35 @@ class DeadBeatController(Node):
         super().__init__('deadbeat_controller')
         
         self.get_logger().info('DeadBeatController node has been started.')
-        self.create_subscription(JointState, '/joint_states', self.joint_state_callback, 10)
         self.create_subscription(TFMessage, '/tf', self.tf_callback, 10)
         self.position_publisher = self.create_publisher(Float64MultiArray, '/position_controller/commands', 10)
 
         self.q = np.array([0.0, 0.0])  # [body_height, leg_extension]
 
-        self.l0 = 0.23 # 
+        self.l0 = 0.225 # spring equilibrium (m)
         self.mass_body = 1.0   # kg
         self.mass_foot = 0.08  # kg
         self.zf = 0 # foot height (m)
         self.zb = 0 # body height (m)
-        self.Hk = 0 # actual height of current hop (m)
-        self.Hc = 0 # value given to controller as apex height of current hop (m)
+        self.zb_o = 0.5
+        self.zb_dot = 0
+        self.Hk = 0.5 # actual height of current hop (m)
+        self.Hc = 0.5 # value given to controller as apex height of current hop (m)
         self.Hd = 0.5  # desired height to reach at apex of next hop (m)
         self.Ls = 0
         self.g = 9.81  # gravity acc (m/s^2)
-        self.ks = 100  # stiffness (N/m)
+        self.ks = 1000  # spring stiffness (N/m)
+
+        self.b2ul = 0.125
+        self.ul2ll = 0
+        self.ll2f = 0.05
+        self.f2fc = 0.005
 
         self.state = 'air' # initial state
         self.air_state_timer = None
         self.air_delay = 0.1
 
-        self.Ts = 0.01
-        self.t = 0
+        self.Ts = 0.05
 
         self.create_timer(self.Ts, self.timer_callback)
 
@@ -51,41 +54,41 @@ class DeadBeatController(Node):
 
         elif self.state == 'compress' and self.zf <= 0:
             self.state = 'touchdown'
-            self.get_logger().info('touchdown')
+            # self.get_logger().info('touchdown')
 
-        elif self.state == 'touchdown' and self.zb-self.zf > self.l0:
+        elif self.state == 'touchdown' and self.zb > self.l0 and self.zb_dot > 0:
             self.state = 'rebound'
-            # shut off prismatic
+            # joint shut down
             self.command_pub()
-            self.get_logger().info('rebound')
+            # self.get_logger().info('rebound')
         
-        elif self.state == 'rebound' and self.zf >= 0:
+        elif self.state == 'rebound' and self.zf > 0:
             self.state = 'air'
-            self.get_logger().info('air')
+            # self.get_logger().info('air')
 
     def air_to_compress_callback(self):
         if self.state == 'air':
             self.state = 'compress'
             self.command_pub()
-            self.get_logger().info('compress')
+            # self.get_logger().info('compress')
 
             if self.air_state_timer is not None:
                 self.air_state_timer.cancel()
                 self.destroy_timer(self.air_state_timer)
                 self.air_state_timer = None
 
-    def joint_state_callback(self, msg: JointState):
-        self.q = np.array(msg.position)
-        
-
     def tf_callback(self, msg: TFMessage):
         self.zb = msg.transforms[1].transform.translation.z
-        self.get_logger().info(f'Body height: {self.zb}')
+        self.ul2ll = -msg.transforms[0].transform.translation.z
+        self.zf = self.zb-(self.b2ul + self.ul2ll + self.ll2f + self.f2fc)
+        self.zb_dot = (self.zb - self.zb_o)/(1/19)
+        self.zb_o = self.zb
+        self.get_logger().info(f'Body height: {self.zb}, Foot height: {self.zf}')
 
     def timer_callback(self):
         self.state_manager()
-        # self.get_logger().info(f'Published position commands: {command_msg.data}')
-        pass
+        self.get_logger().info(f'{self.state}')
+
 
     def command_pub(self):
 
@@ -99,13 +102,16 @@ class DeadBeatController(Node):
             Eh = (self.mass_body + self.mass_foot) * self.g *(self.Hd - self.Hc)
             u = El + Et + Eh
             desired_compression = sqrt((2 * u) / self.ks)
+            self.get_logger().info(f"command: {desired_compression}")
 
             msg = Float64MultiArray()
-            msg.data = [desired_compression]  # Example command values
+            msg.data = [desired_compression]  
         else:
+            # stop controller (free joint)
+
             pass
 
-        msg.data = [desired_compression]  # Example command values
+        msg.data = [desired_compression]
         self.position_publisher.publish(msg)
 
 

@@ -122,13 +122,21 @@ def generate_launch_description():
             )
         ),
 
-        # After joint_state_broadcaster is active, start the effort controller
+        # After joint_state_broadcaster is active, start the position controller
         RegisterEventHandler(
             event_handler=OnProcessExit(
                 target_action=jsb_spawner,
                 on_exit=[position_spawner]
             )
         ),
+
+        # Node(
+        #     package='monoped_description',
+        #     namespace='',
+        #     executable='deadbeat_controller.py',
+        #     name='deadbeat_controller',
+        # ),
+
         bridge,
         rviz
     ])
