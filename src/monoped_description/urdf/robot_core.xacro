@@ -82,10 +82,11 @@
         <origin xyz="0 0 -0.1" rpy="0 0 0"/>
         <parent link="upper_leg_link"/>
         <child link="lower_leg_link"/>
-        <!-- Positive prismatic motion should drive the leg downward -->
-        <axis xyz="0 0 -1"/>
-            <limit lower="0" upper="0.08" effort="1000" velocity="1000"/>
-            <dynamics damping="0.0" friction="0.0" spring_reference="0.09" spring_stiffness="1000.0" />
+
+        <axis xyz="0 0 1"/>
+        <limit lower="0" upper="0.08" effort="1000" velocity="1000"/>
+        <dynamics damping="0.0" friction="0.0"/>
+
     </joint>
 
     <link name="lower_leg_link">
@@ -172,5 +173,9 @@
         <material>Gazebo/Red</material>
     </gazebo>
     
+    <gazebo reference="upper_leg_to_lower_leg">
+        <springReference>0.0</springReference>
+        <springStiffness>1000.0</springStiffness>
+    </gazebo>
 
 </robot>
