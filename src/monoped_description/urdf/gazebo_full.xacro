@@ -18,7 +18,7 @@
       <state_interface name="effort"/>
     </joint>
 
-    <joint name="upper_leg_to_lower_leg">
+    <joint name="j1">
       <command_interface name="effort"/>
       <state_interface name="position">
         <param name="initial_value">0.0</param>

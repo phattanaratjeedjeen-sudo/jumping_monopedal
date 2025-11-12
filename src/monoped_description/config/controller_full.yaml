@@ -21,7 +21,7 @@ controller_manager:
 effort_controller:
   ros__parameters:
     joints:
-      - upper_leg_to_lower_leg
+      - j1
     command_interfaces:
       - effort
     state_interfaces:
