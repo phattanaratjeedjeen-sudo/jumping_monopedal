@@ -6,18 +6,6 @@
       <plugin>gz_ros2_control/GazeboSimSystem</plugin>
     </hardware>
 
-    <joint name="world_to_body">
-      <command_interface name="effort">
-        <param name="min">-100</param>
-        <param name="max">100</param>
-      </command_interface>
-      <state_interface name="position">
-        <param name="initial_value">2</param>
-      </state_interface>
-      <state_interface name="velocity"/>
-      <state_interface name="effort"/>
-    </joint>
-
     <joint name="upper_leg_to_lower_leg">
       <command_interface name="effort"/>
       <state_interface name="position">
@@ -35,10 +23,9 @@
     </plugin>
 
     <!-- Sensor Manager (จำเป็นสำหรับ IMU, Lidar, ฯลฯ) -->
-    <!-- <plugin filename="libignition-gazebo-sensors-system.so"
-            name="ignition::gazebo::systems::Sensors">
+    <plugin filename="libignition-gazebo-sensors-system.so" name="ignition::gazebo::systems::Sensors">
       <render_engine>ogre2</render_engine>
-    </plugin> -->
+    </plugin>
   </gazebo>
 
   <!-- Plugin mimic สำหรับทางด้านซ้าย -->
@@ -58,19 +45,61 @@
     </plugin>
   </gazebo> -->
 
-  <!-- <gazebo reference="base_link">
-    <sensor name="imu_sensor" type="imu">
+  <gazebo reference="body_link">
+    <!-- <sensor name="imu_sensor" type="imu">
       <always_on>true</always_on>
       <update_rate>100.0</update_rate>
       <visualize>true</visualize>
-      <topic>/imu/data</topic>
+      <topic>/imu_data</topic>
       <gz_frame_id>world</gz_frame_id>
-      <plugin filename="libignition-gazebo-imu-system.so"
-              name="ignition::gazebo::systems::Imu"/>
+      <plugin filename="libignition-gazebo-imu-system.so" name="ignition::gazebo::systems::Imu"/>
       <pose>0 0 0 0 0 0</pose>
+    </sensor> -->
+
+  <sensor name="altimeter_sensor" type="altimeter">
+      <always_on>true</always_on>
+      <update_rate>100.0</update_rate>
+      <visualize>true</visualize>
+      <topic>/altimeter_data</topic>
+      <pose>0 0 0 0 0 0</pose> 
+      <frame_id> "world" </frame_id>
+      <plugin filename="libignition-gazebo-altimeter-system.so" name="ignition::gazebo::systems::Altimeter"/>
+      
     </sensor>
+
+  </gazebo>
+
+  <!-- <gazebo>
+    <plugin
+      filename="libignition-gazebo-pose-publisher.so"
+      name="ignition::gazebo::systems::PosePublisher">
+      
+      <model_name>example</model_name>  <ros>true</ros>
+      <is_static>false</is_static>
+      <update_rate>100.0</update_rate>
+      
+      <topic>/model/example/odom</topic> 
+      <link_name>body_link</link_name>
+      
+      <publish_odom>true</publish_odom>
+      
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>body_link</robot_base_frame>
+    </plugin>
   </gazebo> -->
 
-
+  <!-- <gazebo>
+    <plugin name="p3d_base_controller" filename="libgazebo_ros_p3d.so">
+      <ros>
+        <namespace>/</namespace>
+        <argument>odom@nav_msgs/msg/Odometry</argument>
+        <argument>base_link_pose@geometry_msgs/msg/PoseStamped</argument>
+      </ros>
+      
+      <update_rate>50.0</update_rate>
+      <body_name>body_link</body_name> 
+      <topicName>/odom</topicName> <frameName>odom</frameName>  <ros_topic_prefix>/odom</ros_topic_prefix> 
+    </plugin>
+  </gazebo> -->
 
 </robot>

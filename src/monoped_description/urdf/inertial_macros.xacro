@@ -26,7 +26,7 @@
         </inertial>
     </xacro:macro>
 
-    <xacro:macro name="inertial_sphere" params="mass radius *origin">
+    <!-- <xacro:macro name="inertial_sphere" params="mass radius *origin">
         <inertial>
             <xacro:insert_block name="origin"/>
             <mass value="${mass}" />
@@ -34,6 +34,6 @@
                     iyy="${(2/5) * mass * radius * radius}" iyz="0.0"
                     izz="${(2/5) * mass * radius * radius}" />
         </inertial>
-    </xacro:macro>
+    </xacro:macro> -->
 
 </robot>

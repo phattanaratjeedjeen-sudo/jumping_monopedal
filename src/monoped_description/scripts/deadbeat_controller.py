@@ -3,117 +3,132 @@
 from monoped_description.dummy_module import dummy_function, dummy_var
 import rclpy
 from rclpy.node import Node
-from tf2_msgs.msg import TFMessage
+from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray
+from ros_gz_interfaces.msg import Altimeter
+import xml.etree.ElementTree as ET
+from math import sqrt
 import numpy as np
 import random
-from math import sqrt
-
 
 class DeadBeatController(Node):
     def __init__(self):
         super().__init__('deadbeat_controller')
-        
-        self.get_logger().info('DeadBeatController node has been started.')
-        self.create_subscription(TFMessage, '/tf', self.tf_callback, 10)
-        self.position_publisher = self.create_publisher(Float64MultiArray, '/position_controller/commands', 10)
+        self.create_subscription(JointState, '/joint_states', self.joint_states_callback, 10)
+        self.create_subscription(Altimeter, '/altimeter_data', self.altimeter_callback, 10)
+        self.effort_publisher = self.create_publisher(Float64MultiArray, '/effort_controller/commands', 10)
 
-        self.q = np.array([0.0, 0.0])  # [body_height, leg_extension]
+        tree = ET.parse("monoped_description/urdf/robot_params.xacro")
+        xacro_ns = {'xacro': 'http://www.ros.org/wiki/xacro'}
+        root = tree.getroot()
 
-        self.l0 = 0.225 # spring equilibrium (m)
-        self.mass_body = 1.0   # kg
-        self.mass_foot = 0.08  # kg
-        self.zf = 0 # foot height (m)
-        self.zb = 0 # body height (m)
-        self.zb_o = 0.5
-        self.zb_dot = 0
-        self.Hk = 0.5 # actual height of current hop (m)
-        self.Hc = 0.5 # value given to controller as apex height of current hop (m)
-        self.Hd = 0.5  # desired height to reach at apex of next hop (m)
-        self.Ls = 0
-        self.g = 9.81  # gravity acc (m/s^2)
-        self.ks = 1000  # spring stiffness (N/m)
+        self.mass = []
+        mass_properties = ['mass_body', 'mass_foot']
+        for properties in mass_properties:
+            xpath_query = f"xacro:property[@name='{properties}']"
+            property_element = root.find(xpath_query, xacro_ns)
+            value = float(property_element.get('value'))
+            self.mass.append(value)
 
-        self.b2ul = 0.125
-        self.ul2ll = 0
-        self.ll2f = 0.05
-        self.f2fc = 0.005
+        self.dimension = [] 
+        dimension_properties = ['b2ul', 'ul2ll', 'll2f', 'f_r']
+        for properties in dimension_properties:
+            xpath_query = f"xacro:property[@name='{properties}']"
+            property_element = root.find(xpath_query, xacro_ns)
+            value = float(property_element.get('value'))
+            self.dimension.append(value)
+
+
+        self.l0 = 0.22         # spring equilibrium (m)
+        self.zf = 0.0          # foot height (m)
+        self.zb = 0.0          # body height (m)
+        self.zb_dot = 0.0      
+        self.Hk = 0.5          # actual height of current hop (m)
+        self.Hc = 0.0          # value given to controller as apex height of current hop (m)
+        self.Hd = 0.5          # desired height to reach at apex of next hop (m)
+        self.Ls = 0            # unknown variable
+        self.g = 9.81          # gravity acc (m/s^2)
+        self.ks = 1000         # spring stiffness (N/m)
+        self.desired_compression = 0.0 # spring compressed (m)
+        self.altimeter = [0, 0, 0]     # altimeater sensor data [position, vel, ref]
 
         self.state = 'air' # initial state
         self.air_state_timer = None
         self.air_delay = 0.1
 
-        self.Ts = 0.05
+        self.create_timer(0.01, self.timer_callback)
+        # self.get_logger().info(f'mass: {self.dimension}')
 
-        self.create_timer(self.Ts, self.timer_callback)
+
+    def altimeter_callback(self, msg:Altimeter):
+        self.altimeter = np.array([msg.vertical_position, msg.vertical_velocity, msg.vertical_reference])
+        self.zb = self.altimeter[2] - (-self.altimeter[0])
+        self.zb_dot = self.altimeter[1]
+        # self.get_logger().info(f'altimeter: {self.altimeter}, zb: {self.zb}')
+
 
     def state_manager(self):
+        
         if self.state == 'air':
-            if self.air_state_timer is None:
-                self.air_state_timer = self.create_timer(self.air_delay, self.air_to_compress_callback)
+            if self.zb_dot <= 0:
+                self.Hk = self.zb # apex hop height
+                if self.air_state_timer is None:
+                    self.air_state_timer = self.create_timer(self.air_delay, self.air_to_compress_callback)
 
         elif self.state == 'compress' and self.zf <= 0:
             self.state = 'touchdown'
-            # self.get_logger().info('touchdown')
 
-        elif self.state == 'touchdown' and self.zb > self.l0 and self.zb_dot > 0:
+        elif self.state == 'touchdown' and self.zb_dot >= 0:
             self.state = 'rebound'
-            # joint shut down
             self.command_pub()
-            # self.get_logger().info('rebound')
         
         elif self.state == 'rebound' and self.zf > 0:
             self.state = 'air'
-            # self.get_logger().info('air')
+    
 
     def air_to_compress_callback(self):
+        
         if self.state == 'air':
             self.state = 'compress'
             self.command_pub()
-            # self.get_logger().info('compress')
 
             if self.air_state_timer is not None:
                 self.air_state_timer.cancel()
                 self.destroy_timer(self.air_state_timer)
                 self.air_state_timer = None
 
-    def tf_callback(self, msg: TFMessage):
-        self.zb = msg.transforms[1].transform.translation.z
-        self.ul2ll = -msg.transforms[0].transform.translation.z
-        self.zf = self.zb-(self.b2ul + self.ul2ll + self.ll2f + self.f2fc)
-        self.zb_dot = (self.zb - self.zb_o)/(1/19)
-        self.zb_o = self.zb
-        self.get_logger().info(f'Body height: {self.zb}, Foot height: {self.zf}')
+
+    def joint_states_callback(self, msg: JointState):
+        # self.zf = self.zb - self.dimension[0] - (self.dimension[1] - msg.position[0]) - self.dimension[2] - 0.005
+        self.zf = self.zb + sum(self.dimension[0:2]) + msg.position[0] - self.dimension[3]
+        # self.get_logger().info(f"{self.zf}")
+
 
     def timer_callback(self):
         self.state_manager()
-        self.get_logger().info(f'{self.state}')
+        # self.get_logger().info(f'{self.state}')
 
 
     def command_pub(self):
-
         msg = Float64MultiArray()
-        desired_compression = 0.0
         
         if self.state == 'compress':
-            self.Hc = random.uniform(0.1, 0.3)
-            El = self.mass_foot * self.g * (self.Hc - self.Ls)
-            Et = (self.mass_body + self.mass_foot) * self.g * (self.Hd - self.Ls) * (self.mass_foot / self.mass_body)
-            Eh = (self.mass_body + self.mass_foot) * self.g *(self.Hd - self.Hc)
+            self.Hc = random.gauss(0.01, self.Hk)
+            El = self.mass[1] * self.g * (self.Hc - self.Ls) 
+            Et = (self.mass[0] + self.mass[1]) * self.g * (self.Hd - self.Ls) * (self.mass[1] / self.mass[0])
+            Eh = (self.mass[0] + self.mass[1]) * self.g *(self.Hd - self.Hc) 
             u = El + Et + Eh
-            desired_compression = sqrt((2 * u) / self.ks)
-            self.get_logger().info(f"command: {desired_compression}")
+            self.desired_compression = sqrt((2 * u) / self.ks)
+            effort_command = self.desired_compression*self.ks
 
-            msg = Float64MultiArray()
-            msg.data = [desired_compression]  
-        else:
-            # stop controller (free joint)
-
-            pass
-
-        msg.data = [desired_compression]
-        self.position_publisher.publish(msg)
-
+            msg.data = [effort_command]
+            self.effort_publisher.publish(msg)
+            # self.get_logger().info(f"compress: {self.desired_compression}, effort: {effort_command}")
+            
+        elif self.state == 'rebound':
+            # become free joint
+            msg.data = [0.0]
+            self.effort_publisher.publish(msg)
 
 
 def main(args=None):

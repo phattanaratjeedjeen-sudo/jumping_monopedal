@@ -18,7 +18,7 @@ def generate_launch_description():
 
     spawn_x_val = "0.0"
     spawn_y_val = "0.0"
-    spawn_z_val = "0.8"
+    spawn_z_val = "0.4"
 
     # Paths
     rviz_file_path = os.path.join(get_package_share_directory(package_name), "rviz", rviz_file_name)
@@ -67,12 +67,12 @@ def generate_launch_description():
         arguments=['joint_state_broadcaster', '--controller-manager', '/controller_manager'],
     )
 
-    position_spawner = Node(
-        package='controller_manager',
-        executable='spawner',
-        name='spawner_position_controller',
-        arguments=['position_controller', '--controller-manager', '/controller_manager'],
-    )
+    # position_spawner = Node(
+    #     package='controller_manager',
+    #     executable='spawner',
+    #     name='spawner_position_controller',
+    #     arguments=['position_controller', '--controller-manager', '/controller_manager'],
+    # )
 
     effort_spawner = Node(
         package='controller_manager',
@@ -81,25 +81,25 @@ def generate_launch_description():
         arguments=['effort_controller', '--controller-manager', '/controller_manager'],
     )
 
-    spring_effort_controller = TimerAction(
-        period=2.0,
-        actions=[
-            Node(
-                package="monoped_description",
-                executable="spring_effort_controller.py",
-                name="spring_effort_controller",
-                output="screen",
-                parameters=[
-                    {
-                        "joint_name": "body_to_foot",
-                        "spring_reference": 0.3,
-                        "spring_stiffness": 5000.0,
-                        "joint_damping": 50.0,
-                    }
-                ],
-            )
-        ],
-    )
+    # spring_effort_controller = TimerAction(
+    #     period=2.0,
+    #     actions=[
+    #         Node(
+    #             package="monoped_description",
+    #             executable="spring_effort_controller.py",
+    #             name="spring_effort_controller",
+    #             output="screen",
+    #             parameters=[
+    #                 {
+    #                     "joint_name": "body_to_foot",
+    #                     "spring_reference": 0.3,
+    #                     "spring_stiffness": 5000.0,
+    #                     "joint_damping": 50.0,
+    #                 }
+    #             ],
+    #         )
+    #     ],
+    # )
 
 
     # ROS <-> Gazebo bridge
@@ -109,7 +109,8 @@ def generate_launch_description():
         output='screen',
         arguments=[
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
-            '/imu_data@sensor_msgs/msg/Imu[gz.msgs.IMU'
+            '/imu_data@sensor_msgs/msg/Imu[gz.msgs.IMU', 
+            '/altimeter_data@ros_gz_interfaces/msg/Altimeter[gz.msgs.Altimeter',
         ]
     )
 

@@ -21,6 +21,13 @@
     <!-- foot_contact/sphere -->
     <xacro:property name="fc_r" value="0.001"/>
 
+    <!-- joint origin z asix -->
+    <!-- fix: body2upper_leg -->
+    <xacro:property name="b2ul" value="-0.125" />
+    <!-- prismatic: upper_leg2lower_leg -->
+    <xacro:property name="ul2ll" value="-0.1" />
+    <!-- fix: lower_leg2foot -->
+    <xacro:property name="ll2f" value="-0.05" />
 
     <xacro:property name="mass_body" value="1"/>
     <xacro:property name="mass_upper_leg" value="0.001"/>
