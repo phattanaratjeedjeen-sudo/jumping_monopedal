@@ -99,6 +99,7 @@ def generate_launch_description():
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
             '/imu_data@sensor_msgs/msg/Imu[gz.msgs.IMU', 
             '/altimeter_data@ros_gz_interfaces/msg/Altimeter[gz.msgs.Altimeter',
+            '/contact_data@ros_gz_interfaces/msg/Contact[gz.msgs.Contact',
         ]
     )
 
@@ -153,7 +154,7 @@ def generate_launch_description():
     launch_description.add_action(effort_spawner)
     launch_description.add_action(bridge)
     launch_description.add_action(rsp)
-    # launch_description.add_action(deadbeat_controller)
+    launch_description.add_action(deadbeat_controller)
 
 
     return launch_description

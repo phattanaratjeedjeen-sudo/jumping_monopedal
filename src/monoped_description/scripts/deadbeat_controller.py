@@ -60,17 +60,19 @@ class DeadBeatController(Node):
         # initial 
         # self.initial()
 
-    def initial(self):
-        self.delay_timer = self.create_timer(1.0, self.delay_timer_callback)
-        msg = Float64MultiArray()
-        msg.data = [100.0]
-        self.effort_publisher.publish(msg)
 
-    def delay_timer_callback(self):
-        msg = Float64MultiArray()
-        msg.data = [0.0]
-        self.effort_publisher.publish(msg)
-        self.destroy_timer(self.air_state_timer)
+    # def initial(self):
+    #     self.delay_timer = self.create_timer(1.0, self.delay_timer_callback)
+    #     msg = Float64MultiArray()
+    #     msg.data = [100.0]
+    #     self.effort_publisher.publish(msg)
+
+
+    # def delay_timer_callback(self):
+    #     msg = Float64MultiArray()
+    #     msg.data = [0.0]
+    #     self.effort_publisher.publish(msg)
+    #     self.destroy_timer(self.air_state_timer)
         
 
 
@@ -110,7 +112,7 @@ class DeadBeatController(Node):
 
 
     def joint_states_callback(self, msg: JointState):
-        self.zf = self.zb - 0.125 - 0.05 -0.005 - (0.1 - msg.position[0])
+        self.zf = self.zb - 0.125 - 0.05 -0.005 - (0.1 - msg.position[0]) - (0.1 - msg.position[1])
         # self.get_logger().info(f"zf: {self.zf}")
 
 
@@ -127,7 +129,7 @@ class DeadBeatController(Node):
             Et = (self.mass[0] + self.mass[1]) * self.g * (self.Hd - self.Ls) * (self.mass[1] / self.mass[0])
             Eh = (self.mass[0] + self.mass[1]) * self.g *(self.Hd - self.Hc) 
             u = El + Et + Eh
-            self.desired_compression = sqrt((2 * u) / self.ks)
+            self.desired_compression = sqrt((2 * abs(u)) / self.ks)
             effort_command = self.desired_compression*self.ks
 
             msg.data = [effort_command]

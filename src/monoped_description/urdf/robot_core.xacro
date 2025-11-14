@@ -136,7 +136,7 @@
             </geometry>
             <material name="blue"/>
         </visual>
-        <collision>
+        <collision name="foot_collision">
             <origin xyz="0 0 0"/>
             <geometry>
                 <box size="${f_x} ${f_y} ${f_z}"/>
@@ -145,6 +145,21 @@
         <xacro:inertial_box mass="${mass_foot}" x="${f_x}" y="${f_y}" z="${f_z}">
             <origin xyz="0 0 0" rpy="0 0 0"/>
         </xacro:inertial_box>
+
+        <gazebo reference="foot_link">
+            <sensor name="contact_sensor" type="contact">
+            <always_on>true</always_on>
+            <update_rate>100.0</update_rate>
+            <visualize>true</visualize>
+            <pose>0 0 0 0 0 0</pose> 
+            <plugin filename="libignition-gazebo-contact-system.so" name="ignition::gazebo::systems::Contact"/>
+            <contact>
+                <collision>foot_collision</collision>
+                <topic>/contact_data</topic>
+            </contact>
+            </sensor>
+
+        </gazebo>
     </link>
 
 

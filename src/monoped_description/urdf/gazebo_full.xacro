@@ -73,8 +73,25 @@
       <pose>0 0 0 0 0 0</pose> 
       <plugin filename="libignition-gazebo-altimeter-system.so" name="ignition::gazebo::systems::Altimeter"/>
     </sensor>
+  </gazebo>
+
+
+  <gazebo reference="foot_link">
+    <sensor name="contact_sensor" type="contact">
+      <always_on>true</always_on>
+      <update_rate>100.0</update_rate>
+      <visualize>true</visualize>
+      <pose>0 0 0 0 0 0</pose> 
+      <plugin filename="libignition-gazebo-contact-system.so" name="ignition::gazebo::systems::Contact"/>
+      <contact>
+        <collision>foot_collision</collision>
+        <topic>/contact_data</topic>
+      </contact>
+    </sensor>
 
   </gazebo>
+
+
 
   <!-- <gazebo>
     <plugin
