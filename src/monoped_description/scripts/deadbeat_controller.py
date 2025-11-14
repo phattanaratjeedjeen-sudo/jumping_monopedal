@@ -18,7 +18,7 @@ class DeadBeatController(Node):
         self.create_subscription(Altimeter, '/altimeter_data', self.altimeter_callback, 10)
         self.effort_publisher = self.create_publisher(Float64MultiArray, '/effort_controller/commands', 10)
 
-        tree = ET.parse("monoped_description/urdf/robot_params.xacro")
+        tree = ET.parse("/home/phattanarat/jumping_monopedal/src/monoped_description/urdf/robot_params.xacro")
         xacro_ns = {'xacro': 'http://www.ros.org/wiki/xacro'}
         root = tree.getroot()
 
@@ -38,26 +38,40 @@ class DeadBeatController(Node):
             value = float(property_element.get('value'))
             self.dimension.append(value)
 
-
         self.l0 = 0.22         # spring equilibrium (m)
         self.zf = 0.0          # foot height (m)
         self.zb = 0.0          # body height (m)
-        self.zb_dot = 0.0      
-        self.Hk = 0.5          # actual height of current hop (m)
+        self.zb_dot = 0.0      # body velocity (m/s)
+        self.Hk = 1.0          # actual height of current hop (m)
         self.Hc = 0.0          # value given to controller as apex height of current hop (m)
         self.Hd = 0.5          # desired height to reach at apex of next hop (m)
-        self.Ls = 0            # unknown variable
+        self.Ls = 0.0          # unknown variable
         self.g = 9.81          # gravity acc (m/s^2)
         self.ks = 1000         # spring stiffness (N/m)
         self.desired_compression = 0.0 # spring compressed (m)
         self.altimeter = [0, 0, 0]     # altimeater sensor data [position, vel, ref]
-
         self.state = 'air' # initial state
         self.air_state_timer = None
         self.air_delay = 0.1
 
         self.create_timer(0.01, self.timer_callback)
         # self.get_logger().info(f'mass: {self.dimension}')
+
+        # initial 
+        # self.initial()
+
+    def initial(self):
+        self.delay_timer = self.create_timer(1.0, self.delay_timer_callback)
+        msg = Float64MultiArray()
+        msg.data = [100.0]
+        self.effort_publisher.publish(msg)
+
+    def delay_timer_callback(self):
+        msg = Float64MultiArray()
+        msg.data = [0.0]
+        self.effort_publisher.publish(msg)
+        self.destroy_timer(self.air_state_timer)
+        
 
 
     def altimeter_callback(self, msg:Altimeter):
@@ -68,7 +82,6 @@ class DeadBeatController(Node):
 
 
     def state_manager(self):
-        
         if self.state == 'air':
             if self.zb_dot <= 0:
                 self.Hk = self.zb # apex hop height
@@ -87,21 +100,18 @@ class DeadBeatController(Node):
     
 
     def air_to_compress_callback(self):
-        
         if self.state == 'air':
             self.state = 'compress'
             self.command_pub()
 
             if self.air_state_timer is not None:
-                self.air_state_timer.cancel()
                 self.destroy_timer(self.air_state_timer)
                 self.air_state_timer = None
 
 
     def joint_states_callback(self, msg: JointState):
-        # self.zf = self.zb - self.dimension[0] - (self.dimension[1] - msg.position[0]) - self.dimension[2] - 0.005
-        self.zf = self.zb + sum(self.dimension[0:2]) + msg.position[0] - self.dimension[3]
-        # self.get_logger().info(f"{self.zf}")
+        self.zf = self.zb - 0.125 - 0.05 -0.005 - (0.1 - msg.position[0])
+        # self.get_logger().info(f"zf: {self.zf}")
 
 
     def timer_callback(self):
@@ -111,7 +121,6 @@ class DeadBeatController(Node):
 
     def command_pub(self):
         msg = Float64MultiArray()
-        
         if self.state == 'compress':
             self.Hc = random.gauss(0.01, self.Hk)
             El = self.mass[1] * self.g * (self.Hc - self.Ls) 

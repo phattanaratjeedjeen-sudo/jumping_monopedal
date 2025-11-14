@@ -29,16 +29,14 @@
     <!-- fix: lower_leg2foot -->
     <xacro:property name="ll2f" value="-0.05" />
 
-    <xacro:property name="mass_body" value="1"/>
+    <xacro:property name="mass_body" value="1.0"/>
     <xacro:property name="mass_upper_leg" value="0.001"/>
     <xacro:property name="mass_lower_leg" value="0.001"/>
     <xacro:property name="mass_foot" value="0.08"/>
 
     <xacro:property name="joint_damping" value="0.001"/>
     <xacro:property name="joint_friction" value="0.001"/>
-
-    <xacro:property name="contact_stiffness" value="200"/>
-    <xacro:property name="contact_damping" value="0.005"/>
+    <xacro:property name="joint_stiffness" value="1000"/>
 
 
 </robot>

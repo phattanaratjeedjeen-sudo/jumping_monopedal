@@ -14,8 +14,17 @@
       <state_interface name="velocity"/>
       <state_interface name="effort"/>
     </joint>
+
+    <joint name="lower_leg_to_passive_lower_leg">
+      <state_interface name="position">
+        <param name="initial_value">0.0</param>
+      </state_interface>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
     
   </ros2_control>
+
 
   <gazebo>
     <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
@@ -56,15 +65,13 @@
       <pose>0 0 0 0 0 0</pose>
     </sensor> -->
 
-  <sensor name="altimeter_sensor" type="altimeter">
+    <sensor name="altimeter_sensor" type="altimeter">
       <always_on>true</always_on>
       <update_rate>100.0</update_rate>
       <visualize>true</visualize>
       <topic>/altimeter_data</topic>
       <pose>0 0 0 0 0 0</pose> 
-      <frame_id> "world" </frame_id>
       <plugin filename="libignition-gazebo-altimeter-system.so" name="ignition::gazebo::systems::Altimeter"/>
-      
     </sensor>
 
   </gazebo>

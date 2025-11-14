@@ -18,7 +18,7 @@ def generate_launch_description():
 
     spawn_x_val = "0.0"
     spawn_y_val = "0.0"
-    spawn_z_val = "0.4"
+    spawn_z_val = "1.0"
 
     # Paths
     rviz_file_path = os.path.join(get_package_share_directory(package_name), "rviz", rviz_file_name)
@@ -74,6 +74,7 @@ def generate_launch_description():
     #     arguments=['position_controller', '--controller-manager', '/controller_manager'],
     # )
 
+
     effort_spawner = Node(
         package='controller_manager',
         executable='spawner',
@@ -81,25 +82,12 @@ def generate_launch_description():
         arguments=['effort_controller', '--controller-manager', '/controller_manager'],
     )
 
-    # spring_effort_controller = TimerAction(
-    #     period=2.0,
-    #     actions=[
-    #         Node(
-    #             package="monoped_description",
-    #             executable="spring_effort_controller.py",
-    #             name="spring_effort_controller",
-    #             output="screen",
-    #             parameters=[
-    #                 {
-    #                     "joint_name": "body_to_foot",
-    #                     "spring_reference": 0.3,
-    #                     "spring_stiffness": 5000.0,
-    #                     "joint_damping": 50.0,
-    #                 }
-    #             ],
-    #         )
-    #     ],
-    # )
+
+    deadbeat_controller = Node(
+        package='monoped_description',
+        executable='deadbeat_controller.py',
+        name='deadbeat_controller',
+    )
 
 
     # ROS <-> Gazebo bridge
@@ -126,14 +114,14 @@ def generate_launch_description():
     launch_description = LaunchDescription()
 
     # Start controllers in correct order
-    launch_description.add_action(
-        RegisterEventHandler(
-            event_handler=OnProcessExit(
-                target_action=spawn_entity,
-                on_exit=[jsb_spawner],
-            )
-        )
-    )
+    # launch_description.add_action(
+    #     RegisterEventHandler(
+    #         event_handler=OnProcessExit(
+    #             target_action=spawn_entity,
+    #             on_exit=[jsb_spawner],
+    #         )
+    #     )
+    # )
 
     # launch_description.add_action(
     #     RegisterEventHandler(
@@ -144,14 +132,14 @@ def generate_launch_description():
     #     )
     # )
 
-    launch_description.add_action(
-        RegisterEventHandler(
-            event_handler=OnProcessExit(
-                target_action=spawn_entity,
-                on_exit=[effort_spawner],
-            )
-        )
-    )
+    # launch_description.add_action(
+    #     RegisterEventHandler(
+    #         event_handler=OnProcessExit(
+    #             target_action=spawn_entity,
+    #             on_exit=[effort_spawner],
+    #         )
+    #     )
+    # )
 
 
 
@@ -161,9 +149,11 @@ def generate_launch_description():
     launch_description.add_action(rviz)
     launch_description.add_action(gz_sim)
     launch_description.add_action(spawn_entity)
+    launch_description.add_action(jsb_spawner)
+    launch_description.add_action(effort_spawner)
     launch_description.add_action(bridge)
     launch_description.add_action(rsp)
-    # launch_description.add_action(spring_effort_controller)
+    # launch_description.add_action(deadbeat_controller)
 
 
     return launch_description

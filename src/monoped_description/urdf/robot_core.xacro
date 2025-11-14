@@ -1,24 +1,10 @@
-<?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="example">
+<?xml version='1.0' encoding='UTF-8'?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="monoped">
 
     <xacro:include filename="robot_material.xacro"/>
     <xacro:include filename="robot_params.xacro"/>
     <xacro:include filename="inertial_macros.xacro"/>
-    <!-- <xacro:include filename="gazebo_full.xacro" /> -->
-
-
-    <!-- WORLD -->
-
-
-    <!-- <link name="world"/>
-
-    <joint name="world_to_body" type="prismatic">
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <parent link="world"/>
-        <child link="body_link"/>
-        <axis xyz="0 0 1"/>
-        <limit lower="-10" upper="10" effort="1000" velocity="1000"/>
-    </joint> -->
+    <xacro:include filename="gazebo_full.xacro" />
 
 
     <!-- BODY -->
@@ -82,11 +68,9 @@
         <origin xyz="0 0 ${ul2ll}" rpy="0 0 0"/>
         <parent link="upper_leg_link"/>
         <child link="lower_leg_link"/>
-
         <axis xyz="0 0 1"/>
-        <limit lower="0" upper="0.08" effort="1000" velocity="1000"/>
+        <limit lower="0" upper="0.08" effort="200" velocity="10"/>
         <dynamics damping="0.0" friction="0.0"/>
-
     </joint>
 
     <link name="lower_leg_link">
@@ -108,25 +92,39 @@
         </xacro:inertial_cylinder>
     </link>
 
-    <gazebo reference="lower_leg_link">
-        <collision>
-            <surface>
-                <contact>
-                    <ode>
-                        <kp>100000.0</kp>
-                    </ode>
-                </contact>
-            </surface>
-        </collision>
-    </gazebo>
+
+    <!-- PASSSIVE LOWER LEG -->
+
+
+    <joint name="lower_leg_to_passive_lower_leg" type="prismatic">
+        <origin xyz="0 0 ${ul2ll}" rpy="0 0 0"/>
+        <parent link="lower_leg_link"/>
+        <child link="passive_lower_leg"/>
+        <axis xyz="0 0 1"/>
+        <limit lower="0" upper="0.1" effort="1000" velocity="1000"/>
+        <dynamics damping="0.0" friction="0.0"/>
+    </joint>
+
+    <link name="passive_lower_leg">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${ll_r}" length="${ll_l}"/>
+            </geometry>
+            <material name="orange"/>
+        </visual>
+        <xacro:inertial_cylinder mass="${mass_lower_leg}" radius="${ll_r}" length="${ll_l}">
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </xacro:inertial_cylinder>
+    </link>
 
 
     <!-- FOOT -->
 
 
-    <joint name="lower_leg_to_foot" type="fixed">
+    <joint name="passive_lower_leg_to_foot" type="fixed">
         <origin xyz="0 0 ${ll2f}" rpy="0 0 0"/>
-        <parent link="lower_leg_link"/>
+        <parent link="passive_lower_leg"/>
         <child link="foot_link"/>
     </joint>
 
@@ -168,14 +166,15 @@
             <material name="black"/>
         </visual>
     </link> -->
-
-    <gazebo reference="body_link">
-        <material>Gazebo/Red</material>
-    </gazebo>
     
     <gazebo reference="upper_leg_to_lower_leg">
         <springReference>0.0</springReference>
-        <springStiffness>1000.0</springStiffness>
+        <springStiffness>${joint_stiffness}</springStiffness>
+    </gazebo>
+
+    <gazebo reference="lower_leg_to_passive_lower_leg">
+        <springReference>0.0</springReference>
+        <springStiffness>${joint_stiffness}</springStiffness>
     </gazebo>
 
 </robot>

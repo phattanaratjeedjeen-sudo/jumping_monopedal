@@ -28,7 +28,6 @@ ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
   scripts/deadbeat_controller.py
-  scripts/spring_effort_controller.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
