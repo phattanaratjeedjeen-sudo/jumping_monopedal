@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="volta">
 
-  <ros2_control name="GazeboSimSystem" type="system">
-    <hardware>
-      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
-    </hardware>
+    <ros2_control name="GazeboSystem" type="system">
+      <hardware>
+          <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+      </hardware>
 
     <joint name="upper_leg_to_lower_leg">
       <command_interface name="effort"/>
@@ -27,15 +27,25 @@
 
 
   <gazebo>
+      <plugin name="gz_ros2_control::GazeboSimROS2ControlPlugin" filename="libgz_ros2_control-system.so">
+          <parameters>$(find monoped_description)/config/controller_full.yaml</parameters>
+          <parameters>$(find monoped_description)/config/gaz_ros2_ctl_use_sim.yaml</parameters>
+      </plugin>
+  </gazebo>
+
+
+
+
+  <!-- <gazebo>
     <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
       <parameters>$(find monoped_description)/config/controller_full.yaml</parameters>
-    </plugin>
+    </plugin> -->
 
     <!-- Sensor Manager (จำเป็นสำหรับ IMU, Lidar, ฯลฯ) -->
-    <plugin filename="libignition-gazebo-sensors-system.so" name="ignition::gazebo::systems::Sensors">
+    <!-- <plugin filename="libignition-gazebo-sensors-system.so" name="ignition::gazebo::systems::Sensors">
       <render_engine>ogre2</render_engine>
     </plugin>
-  </gazebo>
+  </gazebo> -->
 
   <!-- Plugin mimic สำหรับทางด้านซ้าย -->
   <!-- <gazebo>
@@ -43,7 +53,8 @@
       <master_joint>joint7</master_joint>
       <mimic_joint>joint11</mimic_joint>
       <multiplier>-1.0</multiplier>
-      <offset>0.0</offset>
+      <offset>0.0</offset>ros2 topic echo /contact_data 
+
     </plugin>
 
     <plugin name="mimic_right" filename="libMimicJointPlugin.so">
@@ -55,7 +66,7 @@
   </gazebo> -->
 
   <gazebo reference="body_link">
-    <!-- <sensor name="imu_sensor" type="imu">
+    <sensor name="imu_sensor" type="imu">
       <always_on>true</always_on>
       <update_rate>100.0</update_rate>
       <visualize>true</visualize>
@@ -63,7 +74,7 @@
       <gz_frame_id>world</gz_frame_id>
       <plugin filename="libignition-gazebo-imu-system.so" name="ignition::gazebo::systems::Imu"/>
       <pose>0 0 0 0 0 0</pose>
-    </sensor> -->
+    </sensor>
 
     <sensor name="altimeter_sensor" type="altimeter">
       <always_on>true</always_on>
@@ -77,18 +88,14 @@
 
 
   <gazebo reference="foot_link">
-    <sensor name="contact_sensor" type="contact">
-      <always_on>true</always_on>
-      <update_rate>100.0</update_rate>
-      <visualize>true</visualize>
-      <pose>0 0 0 0 0 0</pose> 
-      <plugin filename="libignition-gazebo-contact-system.so" name="ignition::gazebo::systems::Contact"/>
+    <sensor name="foot_contact_sensor" type="contact">
       <contact>
         <collision>foot_collision</collision>
         <topic>/contact_data</topic>
       </contact>
+      <always_on>1</always_on>
+      <update_rate>100</update_rate>
     </sensor>
-
   </gazebo>
 
 

@@ -1,14 +1,16 @@
 import os
 
-from ament_index_python.packages import get_package_share_directory, get_package_prefix
+from ament_index_python.packages import get_package_share_directory
+
+
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, RegisterEventHandler, ExecuteProcess, TimerAction
+from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, RegisterEventHandler
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch_ros.actions import Node
+from launch.substitutions import LaunchConfiguration
 from launch.event_handlers import OnProcessExit
 from launch_ros.substitutions import FindPackageShare
-from launch.actions import IncludeLaunchDescription
-import launch_ros.actions
+
+from launch_ros.actions import Node
 
 def generate_launch_description():
 
@@ -24,6 +26,22 @@ def generate_launch_description():
     rviz_file_path = os.path.join(get_package_share_directory(package_name), "rviz", rviz_file_name)
     pkg_share = FindPackageShare(package=package_name).find(package_name)
 
+
+    default_world = os.path.join(
+        get_package_share_directory(package_name),
+        'worlds',
+        'empty.world'
+        )    
+
+    world = LaunchConfiguration('world')
+
+    world_arg = DeclareLaunchArgument(
+        'world',
+        default_value=default_world,
+        description='World to load'
+        )
+
+
     # Include Robot State Publisher
     rsp = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -35,12 +53,10 @@ def generate_launch_description():
 
     # Gazebo simulation launch
     gz_sim = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            [os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')]
-        ),
-        launch_arguments={'gz_args': '-r -v 1 empty.sdf'}.items()
-        # launch_arguments={'gz_args': '-v 1 empty.sdf'}.items()
-    )
+                PythonLaunchDescriptionSource([os.path.join(
+                    get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')]),
+                    launch_arguments={'gz_args': ['-r -v4 ', world], 'on_exit_shutdown': 'true'}.items()
+             )
 
     # Spawn the robot at a specific location
     spawn_entity = Node(
@@ -67,13 +83,6 @@ def generate_launch_description():
         arguments=['joint_state_broadcaster', '--controller-manager', '/controller_manager'],
     )
 
-    # position_spawner = Node(
-    #     package='controller_manager',
-    #     executable='spawner',
-    #     name='spawner_position_controller',
-    #     arguments=['position_controller', '--controller-manager', '/controller_manager'],
-    # )
-
 
     effort_spawner = Node(
         package='controller_manager',
@@ -90,16 +99,14 @@ def generate_launch_description():
     )
 
 
-    # ROS <-> Gazebo bridge
+    bridge_params = os.path.join(get_package_share_directory(package_name),'config','gz_bridge.yaml')
     bridge = Node(
-        package='ros_gz_bridge', 
-        executable='parameter_bridge', 
-        output='screen',
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
         arguments=[
-            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
-            '/imu_data@sensor_msgs/msg/Imu[gz.msgs.IMU', 
-            '/altimeter_data@ros_gz_interfaces/msg/Altimeter[gz.msgs.Altimeter',
-            '/contact_data@ros_gz_interfaces/msg/Contact[gz.msgs.Contact',
+            '--ros-args',
+            '-p',
+            f'config_file:={bridge_params}',
         ]
     )
 
@@ -115,45 +122,32 @@ def generate_launch_description():
     launch_description = LaunchDescription()
 
     # Start controllers in correct order
-    # launch_description.add_action(
-    #     RegisterEventHandler(
-    #         event_handler=OnProcessExit(
-    #             target_action=spawn_entity,
-    #             on_exit=[jsb_spawner],
-    #         )
-    #     )
-    # )
+    launch_description.add_action(
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=spawn_entity,
+                on_exit=[jsb_spawner],
+            )
+        )
+    )
 
-    # launch_description.add_action(
-    #     RegisterEventHandler(
-    #         event_handler=OnProcessExit(
-    #             target_action=jsb_spawner,
-    #             on_exit=[position_spawner],
-    #         )
-    #     )
-    # )
-
-    # launch_description.add_action(
-    #     RegisterEventHandler(
-    #         event_handler=OnProcessExit(
-    #             target_action=spawn_entity,
-    #             on_exit=[effort_spawner],
-    #         )
-    #     )
-    # )
-
-
-
+    launch_description.add_action(
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=jsb_spawner,
+                on_exit=[effort_spawner],
+            )
+        )
+    )
 
 
     # Add launch actions
     launch_description.add_action(rviz)
+    launch_description.add_action(world_arg)
     launch_description.add_action(gz_sim)
-    launch_description.add_action(spawn_entity)
-    launch_description.add_action(jsb_spawner)
-    launch_description.add_action(effort_spawner)
-    launch_description.add_action(bridge)
     launch_description.add_action(rsp)
+    launch_description.add_action(spawn_entity)
+    launch_description.add_action(bridge)
     launch_description.add_action(deadbeat_controller)
 
 

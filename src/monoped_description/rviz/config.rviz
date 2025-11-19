@@ -5,9 +5,6 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /Pose1
-        - /Odometry1
-        - /Odometry1/Shape1
         - /RobotModel1
         - /TF1
       Splitter Ratio: 0.6524216532707214
@@ -71,45 +68,6 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /goal_pose
       Value: true
-    - Angle Tolerance: 0.10000000149011612
-      Class: rviz_default_plugins/Odometry
-      Covariance:
-        Orientation:
-          Alpha: 0.5
-          Color: 255; 255; 127
-          Color Style: Unique
-          Frame: Local
-          Offset: 1
-          Scale: 1
-          Value: true
-        Position:
-          Alpha: 0.30000001192092896
-          Color: 204; 51; 204
-          Scale: 1
-          Value: true
-        Value: true
-      Enabled: true
-      Keep: 1
-      Name: Odometry
-      Position Tolerance: 0.10000000149011612
-      Shape:
-        Alpha: 1
-        Axes Length: 1
-        Axes Radius: 0.10000000149011612
-        Color: 255; 25; 0
-        Head Length: 0.30000001192092896
-        Head Radius: 0.10000000149011612
-        Shaft Length: 1
-        Shaft Radius: 0.05000000074505806
-        Value: Axes
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /odom
-      Value: true
     - Alpha: 1
       Class: rviz_default_plugins/RobotModel
       Collision Enabled: false
@@ -133,17 +91,17 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        foot_contact:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         foot_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
         lower_leg_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        passive_lower_leg:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -168,11 +126,11 @@ Visualization Manager:
         All Enabled: true
         body_link:
           Value: true
-        foot_contact:
-          Value: true
         foot_link:
           Value: true
         lower_leg_link:
+          Value: true
+        passive_lower_leg:
           Value: true
         upper_leg_link:
           Value: true
@@ -185,8 +143,8 @@ Visualization Manager:
         body_link:
           upper_leg_link:
             lower_leg_link:
-              foot_link:
-                foot_contact:
+              passive_lower_leg:
+                foot_link:
                   {}
       Update Interval: 0
       Value: true

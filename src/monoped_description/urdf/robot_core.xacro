@@ -113,6 +113,12 @@
             </geometry>
             <material name="orange"/>
         </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${ll_r}" length="${ll_l}"/>
+            </geometry>
+        </collision>
         <xacro:inertial_cylinder mass="${mass_lower_leg}" radius="${ll_r}" length="${ll_l}">
             <origin xyz="0 0 0" rpy="0 0 0"/>
         </xacro:inertial_cylinder>
@@ -145,21 +151,6 @@
         <xacro:inertial_box mass="${mass_foot}" x="${f_x}" y="${f_y}" z="${f_z}">
             <origin xyz="0 0 0" rpy="0 0 0"/>
         </xacro:inertial_box>
-
-        <gazebo reference="foot_link">
-            <sensor name="contact_sensor" type="contact">
-            <always_on>true</always_on>
-            <update_rate>100.0</update_rate>
-            <visualize>true</visualize>
-            <pose>0 0 0 0 0 0</pose> 
-            <plugin filename="libignition-gazebo-contact-system.so" name="ignition::gazebo::systems::Contact"/>
-            <contact>
-                <collision>foot_collision</collision>
-                <topic>/contact_data</topic>
-            </contact>
-            </sensor>
-
-        </gazebo>
     </link>
 
 

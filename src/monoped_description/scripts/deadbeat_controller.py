@@ -18,7 +18,7 @@ class DeadBeatController(Node):
         self.create_subscription(Altimeter, '/altimeter_data', self.altimeter_callback, 10)
         self.effort_publisher = self.create_publisher(Float64MultiArray, '/effort_controller/commands', 10)
 
-        tree = ET.parse("/home/phattanarat/jumping_monopedal/src/monoped_description/urdf/robot_params.xacro")
+        tree = ET.parse("/home/peeradon/jumping_monopedal/src/monoped_description/urdf/robot_params.xacro")
         xacro_ns = {'xacro': 'http://www.ros.org/wiki/xacro'}
         root = tree.getroot()
 
