@@ -7,6 +7,54 @@
 - [Members](#members)
 
 ## System Architecture
+
+### Phase 1: 1-d Monopedal Robot Model With Deadbeat Controller (undamped case)
+
+```mermaid
+graph TB
+    subgraph Gazebo["Gazebo Simulation"]
+        WORLD[Empty World]
+        ROBOT[Monoped Robot]
+        ALT[Altimeter Sensor]
+        IMU[IMU Sensor]
+    end
+
+    subgraph ROS2["ROS2 Control"]
+        RSP[Robot State Publisher]
+        JSB[Joint State Broadcaster]
+        EC[Effort Controller]
+    end
+
+    subgraph Controller["Deadbeat Controller Node"]
+        SM[State Machine]
+        ENERGY[Energy Calculator]
+        SM --> |state| ENERGY
+        ENERGY --> |effort| CMD[Command Publisher]
+    end
+
+    subgraph Bridge["ros_gz_bridge"]
+        BRIDGE[Parameter Bridge]
+    end
+
+    RSP --> |/robot_description| ROBOT
+    ROBOT --> ALT
+    ROBOT --> IMU
+    ALT --> |/altimeter_data| BRIDGE
+    IMU --> |/imu_data| BRIDGE
+    BRIDGE --> |/altimeter_data| SM
+    JSB --> |/joint_states| SM
+    CMD --> |/effort_controller/commands| EC
+    EC --> ROBOT
+```
+
+**Nodes:**
+- **Robot State Publisher**: Publishes robot URDF to `/robot_description`
+- **Joint State Broadcaster**: Publishes joint positions to `/joint_states`
+- **Effort Controller**: Receives effort commands and applies force to joints
+- **Deadbeat Controller**: Main control logic with state machine and energy calculation
+- **ros_gz_bridge**: Bridges Gazebo topics to ROS2
+
+### Phase 2: 2-d Monopedal Robot Model With Reaction Wheel (damped case)
 Comming soon!
 
 ## Installation
@@ -85,7 +133,9 @@ Where $q_1$ and $q_2$ are the prismatic joint displacements (spring compressions
 
 ### Hybrid Domain Cycle
 
-![Hopping Cycle](images/cycle.png)
+<p align="center">
+  <img src="images/cycle.png" alt="Hopping Cycle">
+</p>
 
 The hopping motion follows a hybrid cycle with multiple domains:
 
@@ -118,6 +168,12 @@ The desired spring compression is then:
 $$
 \delta^* = \sqrt{\frac{2u}{k_s}}
 $$
+
+### Demo Video
+
+![demo_video](images/demo-phase1.gif)
+
+For better view plsease watch the [video here](images/demo-phase1.mp4).
 
 ### Simulation Results
 
