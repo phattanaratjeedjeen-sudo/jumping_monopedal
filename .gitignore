@@ -2,3 +2,5 @@ build/
 install/
 log/
 .vscode/
+/src/.vscode/**
+/src/monoped_description/scripts/__pycache__

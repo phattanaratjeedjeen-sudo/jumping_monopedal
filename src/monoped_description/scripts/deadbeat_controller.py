@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 
+import math
+import os
+from ament_index_python.packages import get_package_share_directory
 from monoped_description.dummy_module import dummy_function, dummy_var
 import rclpy
 from rclpy.node import Node
@@ -17,8 +20,11 @@ class DeadBeatController(Node):
         self.create_subscription(JointState, '/joint_states', self.joint_states_callback, 10)
         self.create_subscription(Altimeter, '/altimeter_data', self.altimeter_callback, 10)
         self.effort_publisher = self.create_publisher(Float64MultiArray, '/effort_controller/commands', 10)
+        # Single debug topic carrying combined state for easier plotting/logging
+        self.debug_state_publisher = self.create_publisher(Float64MultiArray, '/debug_state', 10)
 
-        tree = ET.parse("/home/peeradon/jumping_monopedal/src/monoped_description/urdf/robot_params.xacro")
+        tree_path = os.path.join(get_package_share_directory('monoped_description'), "urdf", "robot_params.xacro")
+        tree = ET.parse(tree_path)
         xacro_ns = {'xacro': 'http://www.ros.org/wiki/xacro'}
         root = tree.getroot()
 
@@ -37,15 +43,14 @@ class DeadBeatController(Node):
             property_element = root.find(xpath_query, xacro_ns)
             value = float(property_element.get('value'))
             self.dimension.append(value)
-
-        self.l0 = 0.22         # spring equilibrium (m)
+        self.l0 = 0.38         # spring equilibrium (m) (0.125 + 0.1 + 0.1 + 0.05 + 0.005) base from urdf
         self.zf = 0.0          # foot height (m)
         self.zb = 0.0          # body height (m)
         self.zb_dot = 0.0      # body velocity (m/s)
-        self.Hk = 1.0          # actual height of current hop (m)
+        self.Hk = None          # actual height of current hop (m)
         self.Hc = 0.0          # value given to controller as apex height of current hop (m)
         self.Hd = 0.5          # desired height to reach at apex of next hop (m)
-        self.Ls = 0.0          # unknown variable
+        self.Ls = self.l0
         self.g = 9.81          # gravity acc (m/s^2)
         self.ks = 1000         # spring stiffness (N/m)
         self.desired_compression = 0.0 # spring compressed (m)
@@ -53,43 +58,62 @@ class DeadBeatController(Node):
         self.state = 'air' # initial state
         self.air_state_timer = None
         self.air_delay = 0.1
+        self.measurement_noise_std = 0.01  # e.g. 1 cm noise
+        self.zb_dot_prev = 0.0
+        self.u = 0.0
 
         self.create_timer(0.01, self.timer_callback)
-        # self.get_logger().info(f'mass: {self.dimension}')
-
-        # initial 
-        # self.initial()
 
 
-    # def initial(self):
-    #     self.delay_timer = self.create_timer(1.0, self.delay_timer_callback)
-    #     msg = Float64MultiArray()
-    #     msg.data = [100.0]
-    #     self.effort_publisher.publish(msg)
+    def publish_debug_state(self, effort=None):
+        """
+        Publish combined debug data on one topic to simplify logging/plotting.
+        Data layout: [zb, zb_dot, zf, Hk, Hc, Hd, u, effort, state_code]
+        state_code: air=0, compress=1, touchdown=2, rebound=3, unknown=-1
+        """
+        hk_val = self.Hk if self.Hk is not None else float('nan')
+        effort_val = effort if effort is not None else self.u
+        state_code = {'air': 0.0, 'compress': 1.0, 'touchdown': 2.0, 'rebound': 3.0}.get(self.state, -1.0)
+        msg = Float64MultiArray()
+        msg.data = [
+            self.zb,
+            self.zb_dot,
+            self.zf,
+            hk_val,
+            self.Hc,
+            self.Hd,
+            self.u,
+            effort_val,
+            state_code,
+        ]
+        self.debug_state_publisher.publish(msg)
+
+    def pub_effort(self, effort):
+        msg = Float64MultiArray()
+        msg.data = [effort]
+        self.effort_publisher.publish(msg)
+        self.publish_debug_state(effort)
 
 
-    # def delay_timer_callback(self):
-    #     msg = Float64MultiArray()
-    #     msg.data = [0.0]
-    #     self.effort_publisher.publish(msg)
-    #     self.destroy_timer(self.air_state_timer)
-        
-
-
-    def altimeter_callback(self, msg:Altimeter):
+    def altimeter_callback(self, msg: Altimeter):
         self.altimeter = np.array([msg.vertical_position, msg.vertical_velocity, msg.vertical_reference])
         self.zb = self.altimeter[2] - (-self.altimeter[0])
+        self.zb_dot_prev = self.zb_dot
         self.zb_dot = self.altimeter[1]
-        # self.get_logger().info(f'altimeter: {self.altimeter}, zb: {self.zb}')
+        self.publish_debug_state()
 
 
     def state_manager(self):
         if self.state == 'air':
-            if self.zb_dot <= 0:
-                self.Hk = self.zb # apex hop height
+            # detect apex: previous vel > 0 and current vel <= 0
+            if self.zb_dot_prev > 0.0 and self.zb_dot <= 0.0:
+                self.Hk = self.zb  # apex hop height
+                self.publish_debug_state()
                 if self.air_state_timer is None:
-                    self.air_state_timer = self.create_timer(self.air_delay, self.air_to_compress_callback)
-
+                    self.air_state_timer = self.create_timer(
+                        self.air_delay,
+                        self.air_to_compress_callback
+                    )
         elif self.state == 'compress' and self.zf <= 0:
             self.state = 'touchdown'
 
@@ -113,33 +137,40 @@ class DeadBeatController(Node):
 
     def joint_states_callback(self, msg: JointState):
         self.zf = self.zb - 0.125 - 0.05 -0.005 - (0.1 - msg.position[0]) - (0.1 - msg.position[1])
-        # self.get_logger().info(f"zf: {self.zf}")
-
+        self.publish_debug_state()
 
     def timer_callback(self):
         self.state_manager()
-        # self.get_logger().info(f'{self.state}')
 
 
     def command_pub(self):
         msg = Float64MultiArray()
         if self.state == 'compress':
-            self.Hc = random.gauss(0.01, self.Hk)
+            if self.Hk is None:
+                self.get_logger().warn("Hk is None, skip compress command")
+                return
+            # Case1: Hc set to desired height
+            # self.Hc = self.Hd
+            # Case2: Hc with noise
+            self.Hc = random.gauss(self.Hk, self.measurement_noise_std)
             El = self.mass[1] * self.g * (self.Hc - self.Ls) 
             Et = (self.mass[0] + self.mass[1]) * self.g * (self.Hd - self.Ls) * (self.mass[1] / self.mass[0])
             Eh = (self.mass[0] + self.mass[1]) * self.g *(self.Hd - self.Hc) 
-            u = El + Et + Eh
-            self.desired_compression = sqrt((2 * abs(u)) / self.ks)
-            effort_command = self.desired_compression*self.ks
+            self.u = El + Et + Eh
+            if self.u <= 0.0:
+                self.desired_compression = 0.0
+                effort_command = 0.0
+            else:
+                self.desired_compression = math.sqrt(2.0 * self.u / self.ks)
+                effort_command = self.desired_compression * self.ks
 
-            msg.data = [effort_command]
-            self.effort_publisher.publish(msg)
-            # self.get_logger().info(f"compress: {self.desired_compression}, effort: {effort_command}")
+            self.pub_effort(effort_command)
             
         elif self.state == 'rebound':
             # become free joint
             msg.data = [0.0]
-            self.effort_publisher.publish(msg)
+            self.pub_effort(0.0)
+            self.publish_debug_state(0.0)
 
 
 def main(args=None):

@@ -1,10 +1,11 @@
 import os
+import time
 
 from ament_index_python.packages import get_package_share_directory
 
 
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, RegisterEventHandler
+from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, RegisterEventHandler, ExecuteProcess
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch.event_handlers import OnProcessExit
@@ -17,6 +18,10 @@ def generate_launch_description():
     package_name = "monoped_description"
     rviz_file_name = "config.rviz"
 
+    bag_base_dir = os.path.join(os.path.expanduser("~"), "jumping_monopedal", "bag_files")
+    os.makedirs(bag_base_dir, exist_ok=True)
+    bag_output = os.path.join(bag_base_dir, f"bag_{int(time.time())}")
+
 
     spawn_x_val = "0.0"
     spawn_y_val = "0.0"
@@ -24,8 +29,6 @@ def generate_launch_description():
 
     # Paths
     rviz_file_path = os.path.join(get_package_share_directory(package_name), "rviz", rviz_file_name)
-    pkg_share = FindPackageShare(package=package_name).find(package_name)
-
 
     default_world = os.path.join(
         get_package_share_directory(package_name),
@@ -49,6 +52,11 @@ def generate_launch_description():
         ),
         launch_arguments={"use_sim_time": "true"}.items()
     )
+
+    bag = ExecuteProcess(
+            cmd=['ros2', 'bag', 'record', '-a', '-o', bag_output],
+            output='screen'
+        )
 
 
     # Gazebo simulation launch
@@ -98,6 +106,11 @@ def generate_launch_description():
         name='deadbeat_controller',
     )
 
+    deadbeat_controller_damped = Node(
+        package='monoped_description',
+        executable='deadbeat_controller_damped.py',
+        name='deadbeat_controller_damped',
+    )
 
     bridge_params = os.path.join(get_package_share_directory(package_name),'config','gz_bridge.yaml')
     bridge = Node(
@@ -140,6 +153,15 @@ def generate_launch_description():
         )
     )
 
+    launch_description.add_action(
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=effort_spawner,
+                on_exit=[bag],
+            )
+        )
+    )
+
 
     # Add launch actions
     launch_description.add_action(rviz)
@@ -148,7 +170,7 @@ def generate_launch_description():
     launch_description.add_action(rsp)
     launch_description.add_action(spawn_entity)
     launch_description.add_action(bridge)
-    launch_description.add_action(deadbeat_controller)
+    launch_description.add_action(deadbeat_controller_damped)
 
 
     return launch_description

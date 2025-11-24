@@ -33,38 +33,6 @@
       </plugin>
   </gazebo>
 
-
-
-
-  <!-- <gazebo>
-    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
-      <parameters>$(find monoped_description)/config/controller_full.yaml</parameters>
-    </plugin> -->
-
-    <!-- Sensor Manager (จำเป็นสำหรับ IMU, Lidar, ฯลฯ) -->
-    <!-- <plugin filename="libignition-gazebo-sensors-system.so" name="ignition::gazebo::systems::Sensors">
-      <render_engine>ogre2</render_engine>
-    </plugin>
-  </gazebo> -->
-
-  <!-- Plugin mimic สำหรับทางด้านซ้าย -->
-  <!-- <gazebo>
-    <plugin name="mimic_left" filename="libMimicJointPlugin.so">
-      <master_joint>joint7</master_joint>
-      <mimic_joint>joint11</mimic_joint>
-      <multiplier>-1.0</multiplier>
-      <offset>0.0</offset>ros2 topic echo /contact_data 
-
-    </plugin>
-
-    <plugin name="mimic_right" filename="libMimicJointPlugin.so">
-      <master_joint>joint8</master_joint>
-      <mimic_joint>joint12</mimic_joint>
-      <multiplier>-1.0</multiplier>
-      <offset>0.0</offset>
-    </plugin>
-  </gazebo> -->
-
   <gazebo reference="body_link">
     <sensor name="imu_sensor" type="imu">
       <always_on>true</always_on>
@@ -87,50 +55,5 @@
   </gazebo>
 
 
-  <gazebo reference="foot_link">
-    <sensor name="foot_contact_sensor" type="contact">
-      <contact>
-        <collision>foot_collision</collision>
-        <topic>/contact_data</topic>
-      </contact>
-      <always_on>1</always_on>
-      <update_rate>100</update_rate>
-    </sensor>
-  </gazebo>
-
-
-
-  <!-- <gazebo>
-    <plugin
-      filename="libignition-gazebo-pose-publisher.so"
-      name="ignition::gazebo::systems::PosePublisher">
-      
-      <model_name>example</model_name>  <ros>true</ros>
-      <is_static>false</is_static>
-      <update_rate>100.0</update_rate>
-      
-      <topic>/model/example/odom</topic> 
-      <link_name>body_link</link_name>
-      
-      <publish_odom>true</publish_odom>
-      
-      <odom_frame>odom</odom_frame>
-      <robot_base_frame>body_link</robot_base_frame>
-    </plugin>
-  </gazebo> -->
-
-  <!-- <gazebo>
-    <plugin name="p3d_base_controller" filename="libgazebo_ros_p3d.so">
-      <ros>
-        <namespace>/</namespace>
-        <argument>odom@nav_msgs/msg/Odometry</argument>
-        <argument>base_link_pose@geometry_msgs/msg/PoseStamped</argument>
-      </ros>
-      
-      <update_rate>50.0</update_rate>
-      <body_name>body_link</body_name> 
-      <topicName>/odom</topicName> <frameName>odom</frameName>  <ros_topic_prefix>/odom</ros_topic_prefix> 
-    </plugin>
-  </gazebo> -->
 
 </robot>
