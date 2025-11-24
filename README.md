@@ -110,6 +110,18 @@ Our implementation uses a modified CRH model with two springs:
 - **Active Spring**: Controlled by effort controller (energy release)
 - **Passive Spring**: Stores energy naturally during ground contact
 
+#### TF Tree (URDF Structure)
+
+<p align="center">
+  <img src="images/tf.png" alt="TF Tree" width="400">
+</p>
+
+The robot consists of 5 links connected in series:
+- **body_link** → **upper_leg_link** (fixed joint)
+- **upper_leg_link** → **lower_leg_link** (prismatic joint + active spring)
+- **lower_leg_link** → **passive_lower_leg** (prismatic joint + passive spring)
+- **passive_lower_leg** → **foot_link** (fixed joint)
+
 #### Coordinate Definitions
 
 | Symbol | Description | Value/Formula |
