@@ -1,0 +1,193 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="monoped_2d">
+
+    <xacro:include filename="robot_material.xacro"/>
+    <xacro:include filename="robot_params.xacro"/>
+    <xacro:include filename="inertial_macros.xacro"/>
+    <xacro:include filename="gazebo_full.xacro" />
+
+    <!--
+    TD-SLIP 2D Running Robot Model with Reaction Wheels
+    Based on: Truax et al. 2024 - Torque Driven Spring Loaded Inverted Pendulum
+
+    Structure:
+    body_link (main mass)
+        ├── rw_left_link (continuous joint - reaction wheel left)
+        ├── rw_right_link (continuous joint - reaction wheel right)
+        └── thigh_link (fixed - upper leg)
+            └── shank_link (prismatic joint - spring compression ζ)
+                └── foot_link (cylinder - constrains to XZ plane)
+
+    Note: Hip joint removed - using reaction wheels for attitude control
+    -->
+
+    <!-- ============== BODY ============== -->
+    <link name="body_link">
+        <visual>
+            <origin xyz="0 0 0"/>
+            <geometry>
+                <box size="${b_x} ${b_y} ${b_z}"/>
+            </geometry>
+            <material name="red"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0"/>
+            <geometry>
+                <box size="${b_x} ${b_y} ${b_z}"/>
+            </geometry>
+        </collision>
+        <xacro:inertial_box mass="${mass_body}" x="${b_x}" y="${b_y}" z="${b_z}">
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </xacro:inertial_box>
+    </link>
+
+    <!-- ============== REACTION WHEELS ============== -->
+    <!-- Left Reaction Wheel (Y+ side) -->
+    <joint name="body_to_rw_left" type="continuous">
+        <origin xyz="0 ${rw_y_offset} 0" rpy="${pi/2} 0 0"/>
+        <parent link="body_link"/>
+        <child link="rw_left_link"/>
+        <axis xyz="0 0 1"/>
+        <dynamics damping="${rw_damping}" friction="${rw_friction}"/>
+    </joint>
+
+    <link name="rw_left_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${rw_r}" length="${rw_l}"/>
+            </geometry>
+            <material name="grey"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${rw_r}" length="${rw_l}"/>
+            </geometry>
+        </collision>
+        <xacro:inertial_cylinder mass="${mass_rw}" radius="${rw_r}" length="${rw_l}">
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </xacro:inertial_cylinder>
+    </link>
+
+    <!-- Right Reaction Wheel (Y- side) -->
+    <joint name="body_to_rw_right" type="continuous">
+        <origin xyz="0 ${-rw_y_offset} 0" rpy="${pi/2} 0 0"/>
+        <parent link="body_link"/>
+        <child link="rw_right_link"/>
+        <axis xyz="0 0 1"/>
+        <dynamics damping="${rw_damping}" friction="${rw_friction}"/>
+    </joint>
+
+    <link name="rw_right_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${rw_r}" length="${rw_l}"/>
+            </geometry>
+            <material name="grey"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${rw_r}" length="${rw_l}"/>
+            </geometry>
+        </collision>
+        <xacro:inertial_cylinder mass="${mass_rw}" radius="${rw_r}" length="${rw_l}">
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </xacro:inertial_cylinder>
+    </link>
+
+    <!-- ============== THIGH ============== -->
+    <!-- Upper leg segment (fixed to body) -->
+    <joint name="body_to_thigh" type="fixed">
+        <origin xyz="0 0 ${b2thigh}" rpy="0 0 0"/>
+        <parent link="body_link"/>
+        <child link="thigh_link"/>
+    </joint>
+
+    <link name="thigh_link">
+        <visual>
+            <origin xyz="0 0 ${-thigh_l/2}" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${thigh_r}" length="${thigh_l}"/>
+            </geometry>
+            <material name="orange"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 ${-thigh_l/2}" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${thigh_r}" length="${thigh_l}"/>
+            </geometry>
+        </collision>
+        <xacro:inertial_cylinder mass="${mass_thigh}" radius="${thigh_r}" length="${thigh_l}">
+            <origin xyz="0 0 ${-thigh_l/2}" rpy="0 0 0"/>
+        </xacro:inertial_cylinder>
+    </link>
+
+    <!-- ============== SHANK (SPRING LEG) ============== -->
+    <!-- Prismatic joint for spring compression (ζ) -->
+    <joint name="thigh_to_shank" type="prismatic">
+        <origin xyz="0 0 ${-thigh_l}" rpy="0 0 0"/>
+        <parent link="thigh_link"/>
+        <child link="shank_link"/>
+        <axis xyz="0 0 1"/>
+        <limit lower="${spring_lower_limit}" upper="${spring_upper_limit}"
+               effort="${spring_effort_limit}" velocity="${spring_velocity_limit}"/>
+        <dynamics damping="${spring_damping}" friction="${spring_friction}"/>
+    </joint>
+
+    <link name="shank_link">
+        <visual>
+            <origin xyz="0 0 ${-shank_l/2}" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${shank_r}" length="${shank_l}"/>
+            </geometry>
+            <material name="green"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 ${-shank_l/2}" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${shank_r}" length="${shank_l}"/>
+            </geometry>
+        </collision>
+        <xacro:inertial_cylinder mass="${mass_shank}" radius="${shank_r}" length="${shank_l}">
+            <origin xyz="0 0 ${-shank_l/2}" rpy="0 0 0"/>
+        </xacro:inertial_cylinder>
+    </link>
+
+    <!-- ============== FOOT ============== -->
+    <!-- Cylinder foot - constrains motion to XZ plane (forward/backward only) -->
+    <joint name="shank_to_foot" type="fixed">
+        <origin xyz="0 0 ${-shank_l}" rpy="${pi/2} 0 0"/>
+        <parent link="shank_link"/>
+        <child link="foot_link"/>
+    </joint>
+
+    <link name="foot_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${foot_r}" length="${foot_l}"/>
+            </geometry>
+            <material name="blue"/>
+        </visual>
+        <collision name="foot_collision">
+            <origin xyz="0 0 0"/>
+            <geometry>
+                <cylinder radius="${foot_r}" length="${foot_l}"/>
+            </geometry>
+        </collision>
+        <xacro:inertial_cylinder mass="${mass_foot}" radius="${foot_r}" length="${foot_l}">
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </xacro:inertial_cylinder>
+    </link>
+
+    <!-- ============== SPRING PHYSICS ============== -->
+    <!-- Gazebo spring for prismatic joint -->
+    <gazebo reference="thigh_to_shank">
+        <springReference>0.0</springReference>
+        <springStiffness>${leg_stiffness}</springStiffness>
+    </gazebo>
+
+</robot>

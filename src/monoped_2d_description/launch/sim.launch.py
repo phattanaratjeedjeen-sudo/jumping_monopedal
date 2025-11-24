@@ -15,7 +15,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
 
-    package_name = "monoped_description"
+    package_name = "monoped_2d_description"
     controller_package_name = "monoped_controller"
     rviz_file_name = "config.rviz"
 
@@ -74,7 +74,7 @@ def generate_launch_description():
         name="spawn_entity",
         arguments=[
             "-topic", "robot_description",
-            "-entity", "monoped",
+            "-entity", "monoped_2d",
             '-timeout', '120.0',
             "-x", spawn_x_val,
             "-y", spawn_y_val,
@@ -98,13 +98,6 @@ def generate_launch_description():
         executable='spawner',
         name='spawner_effort_controller',
         arguments=['effort_controller', '--controller-manager', '/controller_manager'],
-    )
-
-
-    deadbeat_controller = Node(
-        package=controller_package_name,
-        executable='deadbeat_controller.py',
-        name='deadbeat_controller',
     )
 
     bridge_params = os.path.join(get_package_share_directory(package_name),'config','gz_bridge.yaml')
@@ -165,7 +158,6 @@ def generate_launch_description():
     launch_description.add_action(rsp)
     launch_description.add_action(spawn_entity)
     launch_description.add_action(bridge)
-    launch_description.add_action(deadbeat_controller)
 
 
     return launch_description

@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" >
+
+    <!-- TD-SLIP 2D Running Robot Parameters -->
+    <!-- Based on: Truax et al. 2024 - Optimizing Design and Control of Running Robots -->
+    <!-- Abstracted as Torque Driven Spring Loaded Inverted Pendulum (TD-SLIP) -->
+
+    <!-- ============== BODY PARAMETERS ============== -->
+    <!-- body/box (main body mass) -->
+    <xacro:property name="b_x" value="0.15"/>
+    <xacro:property name="b_y" value="0.15"/>
+    <xacro:property name="b_z" value="0.15"/>
+
+    <!-- ============== LEG PARAMETERS ============== -->
+    <!-- thigh/cylinder (upper leg segment) -->
+    <xacro:property name="thigh_r" value="0.03"/>
+    <xacro:property name="thigh_l" value="0.15"/>
+
+    <!-- shank/cylinder (lower leg segment with spring) -->
+    <xacro:property name="shank_r" value="0.02"/>
+    <xacro:property name="shank_l" value="0.15"/>
+
+    <!-- ============== FOOT PARAMETERS ============== -->
+    <!-- foot/cylinder (constrains motion to XZ plane - forward/backward only) -->
+    <xacro:property name="foot_r" value="0.015"/>
+    <xacro:property name="foot_l" value="0.15"/>
+
+    <!-- ============== REACTION WHEEL PARAMETERS ============== -->
+    <!-- Reaction wheels on both sides of body for attitude control -->
+    <!-- Larger radius for more inertia, thicker for visibility -->
+    <xacro:property name="rw_r" value="0.08"/>
+    <xacro:property name="rw_l" value="0.03"/>
+    <xacro:property name="mass_rw" value="0.1"/>
+    <!-- Offset from body center (Y-axis) -->
+    <xacro:property name="rw_y_offset" value="${b_y/2 + rw_l/2 + 0.01}"/>
+
+    <!-- ============== JOINT OFFSETS ============== -->
+    <!-- body to thigh joint (z offset) -->
+    <xacro:property name="b2thigh" value="${-b_z/2}"/>
+    <!-- thigh to shank joint (z offset along thigh) -->
+    <xacro:property name="thigh2shank" value="${-thigh_l/2}"/>
+    <!-- shank to foot joint (z offset along shank) -->
+    <xacro:property name="shank2foot" value="${-shank_l/2}"/>
+
+    <!-- ============== MASS PARAMETERS ============== -->
+    <!-- From TD-SLIP model: concentrated body mass with light leg -->
+    <xacro:property name="mass_body" value="1.0"/>
+    <xacro:property name="mass_thigh" value="0.05"/>
+    <xacro:property name="mass_shank" value="0.05"/>
+    <xacro:property name="mass_foot" value="0.02"/>
+
+    <!-- ============== JOINT DYNAMICS ============== -->
+    <!-- TD-SLIP with damping for Phase 2 -->
+    <xacro:property name="spring_damping" value="0.5"/>
+    <xacro:property name="spring_friction" value="0.0"/>
+
+    <!-- ============== SPRING PARAMETERS ============== -->
+    <!-- Leg spring stiffness (ks) -->
+    <xacro:property name="leg_stiffness" value="1000"/>
+    <!-- Spring rest length (L0) is defined by link lengths -->
+    <!-- L0 = thigh_l + shank_l = 0.30 m -->
+
+    <!-- ============== SPRING JOINT LIMITS ============== -->
+    <!-- Spring compression limits (meters) -->
+    <xacro:property name="spring_lower_limit" value="0.0"/>
+    <xacro:property name="spring_upper_limit" value="0.1"/>
+    <xacro:property name="spring_effort_limit" value="500"/>
+    <xacro:property name="spring_velocity_limit" value="10"/>
+
+    <!-- ============== REACTION WHEEL JOINT ============== -->
+    <!-- Continuous rotation for reaction wheels -->
+    <xacro:property name="rw_damping" value="0.01"/>
+    <xacro:property name="rw_friction" value="0.0"/>
+    <xacro:property name="rw_effort_limit" value="10"/>
+    <xacro:property name="rw_velocity_limit" value="100"/>
+
+</robot>

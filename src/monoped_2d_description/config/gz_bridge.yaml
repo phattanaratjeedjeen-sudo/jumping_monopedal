@@ -1,0 +1,25 @@
+# ROS-Gazebo Bridge Configuration for TD-SLIP 2D Robot
+
+- ros_topic_name: "/altimeter_data"
+  gz_topic_name: "/altimeter_data"
+  ros_type_name: "sensor_msgs/msg/FluidPressure"
+  gz_type_name: "gz.msgs.FluidPressure"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/imu_data"
+  gz_topic_name: "/imu_data"
+  ros_type_name: "sensor_msgs/msg/Imu"
+  gz_type_name: "gz.msgs.IMU"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/foot_contact"
+  gz_topic_name: "/foot_contact"
+  ros_type_name: "std_msgs/msg/Bool"
+  gz_type_name: "gz.msgs.Boolean"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/clock"
+  gz_topic_name: "/clock"
+  ros_type_name: "rosgraph_msgs/msg/Clock"
+  gz_type_name: "gz.msgs.Clock"
+  direction: GZ_TO_ROS

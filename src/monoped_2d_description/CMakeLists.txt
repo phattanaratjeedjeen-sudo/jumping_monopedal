@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(monoped_description)
+project(monoped_2d_description)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -47,12 +47,11 @@ install(TARGETS
 
 ################ INSTALL LAUNCH, ETC #################
 install(DIRECTORY
-  # add directories here
   launch
-  rviz
-  config
   urdf
+  config
   worlds
+  rviz
   DESTINATION share/${PROJECT_NAME})
 
 ament_package()
