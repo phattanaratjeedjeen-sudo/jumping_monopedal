@@ -106,12 +106,6 @@ def generate_launch_description():
         name='deadbeat_controller',
     )
 
-    deadbeat_controller_damped = Node(
-        package='monoped_description',
-        executable='deadbeat_controller_damped.py',
-        name='deadbeat_controller_damped',
-    )
-
     bridge_params = os.path.join(get_package_share_directory(package_name),'config','gz_bridge.yaml')
     bridge = Node(
         package="ros_gz_bridge",
@@ -170,7 +164,7 @@ def generate_launch_description():
     launch_description.add_action(rsp)
     launch_description.add_action(spawn_entity)
     launch_description.add_action(bridge)
-    launch_description.add_action(deadbeat_controller_damped)
+    launch_description.add_action(deadbeat_controller)
 
 
     return launch_description
