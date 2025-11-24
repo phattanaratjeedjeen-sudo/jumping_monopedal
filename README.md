@@ -3,7 +3,7 @@
 ## Table of Contents
 - [System Architecture](#system-architecture)
 - [Installation](#installation)
-- [1-d Monopedal Robot Model With Deadbeat Controller (undampinged case)](#1-d-monopedal-robot-model-with-deadbeat-controller-undampinged-case)
+- [1-d Monopedal Robot Model With Deadbeat Controller (undamped case)](#1-d-monopedal-robot-model-with-deadbeat-controller-undamped-case)
 - [Members](#members)
 
 ## System Architecture
@@ -95,12 +95,10 @@ source install/setup.bash
 
 ## 1-d Monopedal Robot Model With Deadbeat Controller (undamped case)
 
-This implementation is based on the **Compress-Release Hopper (CRH)** model from:
+This implementation is based on the **Compress-Release Hopper (CRH)** model described in [[1]](#references).
 
-```
-Ambrose et al., "Design and Comparative Analysis of 1D Hopping Robots," IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2019.
-```
-You can read the full report [here](./Ambrose%20et%20al.%20-%202019%20-%20Design%20and%20Comparative%20Analysis%20of%201D%20Hopping%20Robots.pdf).
+Or You can read the full report [here](./Ambrose%20et%20al.%20-%202019%20-%20Design%20and%20Comparative%20Analysis%20of%201D%20Hopping%20Robots.pdf).
+
 
 ### Model Description
 
@@ -225,3 +223,6 @@ The Poincaré map shows the relationship between current apex height (Hk) and ne
 - ศิวรุตม์ จุลพรหม, 67340800002
 - พัฒนรัตน์ จีดจีน, 68430700410
 - พีรดนย์ เรืองแก้ว, 67340700403
+
+## References
+[1] Ambrose et al., "Design and Comparative Analysis of 1D Hopping Robots," IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2019. DOI: [10.1109/IROS40897.2019.8967692](https://doi.org/10.1109/IROS40897.2019.8967692)
