@@ -101,24 +101,24 @@ def generate_launch_description():
     )
 
     # Reaction Wheel Stabilizer Controller (PID with EFFORT output)
-    # rw_stabilizer = Node(
-    #     package=controller_package_name,
-    #     executable='rw_stabilizer.py',
-    #     name='rw_stabilizer',
-    #     parameters=[
-    #         {'Kp': 10.0},
-    #         {'Ki': 0.1},
-    #         {'Kd': 2.0},
-    #         {'max_torque': 20.0},
-    #         {'dead_zone': 0.005},
-    #         {'control_rate': 100.0},
-    #         {'spring_desired_pos': 0.0},
-    #         {'spring_Kp': 200.0},
-    #         {'spring_Kd': 5.0},
-    #         {'spring_effort_limit': 200.0},
-    #         {'desired_pitch': 0.0},
-    #     ],
-    # )
+    rw_stabilizer = Node(
+        package=controller_package_name,
+        executable='rw_stabilizer.py',
+        name='rw_stabilizer',
+        parameters=[
+            {'Kp': 10.0},
+            {'Ki': 0.1},
+            {'Kd': 2.0},
+            {'max_torque': 20.0},
+            {'dead_zone': 0.005},
+            {'control_rate': 100.0},
+            {'spring_desired_pos': 0.0},
+            {'spring_Kp': 200.0},
+            {'spring_Kd': 5.0},
+            {'spring_effort_limit': 200.0},
+            {'desired_pitch': 0.0},
+        ],
+    )
 
 
     rw_lqr = Node(
