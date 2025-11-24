@@ -56,11 +56,51 @@ You can read the full report [here](./Ambrose%20et%20al.%20-%202019%20-%20Design
 
 ### Model Description
 
-The CRH model consists of two masses connected by a spring:
-- **Body mass (Mb)**: 1.0 kg
-- **Foot mass (Mf)**: 0.08 kg
-- **Spring stiffness (ks)**: 1000 N/m
-- **Spring equilibrium length (L0)**: 0.38 m
+![Model Diagram](images/model.png)
+
+Our implementation uses a modified CRH model with two springs:
+- **Active Spring**: Controlled by effort controller (energy release)
+- **Passive Spring**: Stores energy naturally during ground contact
+
+#### Coordinate Definitions
+
+| Symbol | Description | Value/Formula |
+|--------|-------------|---------------|
+| $z_b$ | Body height from ground | Variable (measured by altimeter) |
+| $z_f$ | Foot height from ground | $z_f = z_b - L_0 + q_1 + q_2$ |
+| $L_0$ | Spring equilibrium length | 0.38 m (from body center to foot) |
+| $z$ | Vertical axis | Positive upward from ground (z=0) |
+
+Where $q_1$ and $q_2$ are the prismatic joint displacements (spring compressions).
+
+#### Model Parameters
+
+| Parameter | Symbol | Value |
+|-----------|--------|-------|
+| Body mass | $M_b$ | 1.0 kg |
+| Foot mass | $M_f$ | 0.08 kg |
+| Active Spring stiffness | $k_s$ | 1000 N/m |
+| Passive Spring stiffness | $k_s$ | 1000 N/m |
+| Spring equilibrium length | $L_0$ | 0.38 m |
+
+### Hybrid Domain Cycle
+
+![Hopping Cycle](images/cycle.png)
+
+The hopping motion follows a hybrid cycle with multiple domains:
+
+| Domain | Description | Transition |
+|--------|-------------|------------|
+| $D_{a1}$ | First air phase (hardstop active, spring uncompressed) | $t = t_s$ → $D_{a2}$ |
+| $D_{a2}$ | Second air phase (spring compression before landing) | $\Delta_L$ (landing impact) → $D_g$ |
+| $D_g$ | Ground phase (foot on ground, spring stores/releases energy) | $\Delta_T$ (takeoff impact) → $D_{a1}$ |
+
+**Key Variables:**
+- $H_k$ — Apex height of current hop
+- $H_{k+1}$ — Apex height of next hop
+- $t_s$ — Time to start spring compression
+- $\Delta_L$ — Landing impact (reset map)
+- $\Delta_T$ — Takeoff impact (reset map)
 
 ### Controller Design (Undamped Case)
 
