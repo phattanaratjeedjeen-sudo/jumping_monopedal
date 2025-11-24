@@ -29,6 +29,8 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   scripts/dummy_script.py
   scripts/deadbeat_controller.py
+  scripts/rw_stabilizer.py
+  scripts/rw_lqr.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
