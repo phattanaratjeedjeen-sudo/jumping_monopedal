@@ -6,22 +6,6 @@
     <xacro:include filename="inertial_macros.xacro"/>
     <xacro:include filename="gazebo_full.xacro" />
 
-    <!--
-    TD-SLIP 2D Running Robot Model with Reaction Wheels
-    Based on: Truax et al. 2024 - Torque Driven Spring Loaded Inverted Pendulum
-
-    Structure:
-    body_link (main mass)
-        ├── rw_left_link (continuous joint - reaction wheel left)
-        ├── rw_right_link (continuous joint - reaction wheel right)
-        └── thigh_link (fixed - upper leg)
-            └── shank_link (prismatic joint - spring compression ζ)
-                └── foot_link (cylinder - constrains to XZ plane)
-
-    Note: Hip joint removed - using reaction wheels for attitude control
-    -->
-
-    <!-- ============== BODY ============== -->
     <link name="body_link">
         <visual>
             <origin xyz="0 0 0"/>
@@ -41,13 +25,13 @@
         </xacro:inertial_box>
     </link>
 
-    <!-- ============== REACTION WHEELS ============== -->
-    <!-- Left Reaction Wheel (Y+ side) -->
+
     <joint name="body_to_rw_left" type="continuous">
-        <origin xyz="0 ${rw_y_offset} 0" rpy="${pi/2} 0 0"/>
+        <origin xyz="0 ${b_y/2 + rw_l/2 + 0.01} 0" rpy="${-pi/2} 0 0"/>
         <parent link="body_link"/>
         <child link="rw_left_link"/>
         <axis xyz="0 0 1"/>
+        <limit effort="${rw_effort_limit}" velocity="${rw_velocity_limit}"/>
         <dynamics damping="${rw_damping}" friction="${rw_friction}"/>
     </joint>
 
@@ -65,17 +49,22 @@
                 <cylinder radius="${rw_r}" length="${rw_l}"/>
             </geometry>
         </collision>
-        <xacro:inertial_cylinder mass="${mass_rw}" radius="${rw_r}" length="${rw_l}">
+        <inertial>
             <origin xyz="0 0 0" rpy="0 0 0"/>
-        </xacro:inertial_cylinder>
+            <mass value="${mass_rw}"/>
+            <inertia ixx="${(1/12) * mass_rw * (3*rw_r*rw_r + rw_l*rw_l)}" ixy="0.0" ixz="0.0"
+                     iyy="${(1/12) * mass_rw * (3*rw_r*rw_r + rw_l*rw_l)}" iyz="0.0"
+                     izz="${(1/2) * mass_rw * rw_r*rw_r}"/>
+        </inertial>
     </link>
 
-    <!-- Right Reaction Wheel (Y- side) -->
+
     <joint name="body_to_rw_right" type="continuous">
-        <origin xyz="0 ${-rw_y_offset} 0" rpy="${pi/2} 0 0"/>
+        <origin xyz="0 ${-b_y/2 - rw_l/2 - 0.01} 0" rpy="${pi/2} 0 0"/>
         <parent link="body_link"/>
         <child link="rw_right_link"/>
         <axis xyz="0 0 1"/>
+        <limit effort="${rw_effort_limit}" velocity="${rw_velocity_limit}"/>
         <dynamics damping="${rw_damping}" friction="${rw_friction}"/>
     </joint>
 
@@ -93,17 +82,21 @@
                 <cylinder radius="${rw_r}" length="${rw_l}"/>
             </geometry>
         </collision>
-        <xacro:inertial_cylinder mass="${mass_rw}" radius="${rw_r}" length="${rw_l}">
+        <inertial>
             <origin xyz="0 0 0" rpy="0 0 0"/>
-        </xacro:inertial_cylinder>
+            <mass value="${mass_rw}"/>
+            <inertia ixx="${(1/12) * mass_rw * (3*rw_r*rw_r + rw_l*rw_l)}" ixy="0.0" ixz="0.0"
+                     iyy="${(1/12) * mass_rw * (3*rw_r*rw_r + rw_l*rw_l)}" iyz="0.0"
+                     izz="${(1/2) * mass_rw * rw_r*rw_r}"/>
+        </inertial>
     </link>
 
-    <!-- ============== THIGH ============== -->
-    <!-- Upper leg segment (fixed to body) -->
+
     <joint name="body_to_thigh" type="fixed">
         <origin xyz="0 0 ${b2thigh}" rpy="0 0 0"/>
         <parent link="body_link"/>
         <child link="thigh_link"/>
+        <axis xyz="0 1 0"/>
     </joint>
 
     <link name="thigh_link">
@@ -125,8 +118,7 @@
         </xacro:inertial_cylinder>
     </link>
 
-    <!-- ============== SHANK (SPRING LEG) ============== -->
-    <!-- Prismatic joint for spring compression (ζ) -->
+    <!-- ACTIVE Spring Joint (effort controlled) -->
     <joint name="thigh_to_shank" type="prismatic">
         <origin xyz="0 0 ${-thigh_l}" rpy="0 0 0"/>
         <parent link="thigh_link"/>
@@ -156,11 +148,39 @@
         </xacro:inertial_cylinder>
     </link>
 
-    <!-- ============== FOOT ============== -->
-    <!-- Cylinder foot - constrains motion to XZ plane (forward/backward only) -->
-    <joint name="shank_to_foot" type="fixed">
-        <origin xyz="0 0 ${-shank_l}" rpy="${pi/2} 0 0"/>
+    <!-- PASSIVE Spring Joint (Gazebo spring only, no control) -->
+    <joint name="shank_to_passive_shank" type="prismatic">
+        <origin xyz="0 0 ${-shank_l}" rpy="0 0 0"/>
         <parent link="shank_link"/>
+        <child link="passive_shank_link"/>
+        <axis xyz="0 0 1"/>
+        <limit lower="${spring_lower_limit}" upper="${spring_upper_limit}"
+               effort="1000" velocity="1000"/>
+        <dynamics damping="${spring_damping}" friction="${spring_friction}"/>
+    </joint>
+
+    <link name="passive_shank_link">
+        <visual>
+            <origin xyz="0 0 ${-shank_l/2}" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${shank_r*0.8}" length="${shank_l}"/>
+            </geometry>
+            <material name="orange"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 ${-shank_l/2}" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="${shank_r*0.8}" length="${shank_l}"/>
+            </geometry>
+        </collision>
+        <xacro:inertial_cylinder mass="${mass_shank}" radius="${shank_r}" length="${shank_l}">
+            <origin xyz="0 0 ${-shank_l/2}" rpy="0 0 0"/>
+        </xacro:inertial_cylinder>
+    </link>
+
+    <joint name="passive_shank_to_foot" type="fixed">
+        <origin xyz="0 0 ${-shank_l}" rpy="${pi/2} 0 0"/>
+        <parent link="passive_shank_link"/>
         <child link="foot_link"/>
     </joint>
 
@@ -183,11 +203,16 @@
         </xacro:inertial_cylinder>
     </link>
 
-    <!-- ============== SPRING PHYSICS ============== -->
-    <!-- Gazebo spring for prismatic joint -->
+
     <gazebo reference="thigh_to_shank">
         <springReference>0.0</springReference>
         <springStiffness>${leg_stiffness}</springStiffness>
     </gazebo>
+
+    <gazebo reference="shank_to_passive_shank">
+        <springReference>0.0</springReference>
+        <springStiffness>${leg_stiffness}</springStiffness>
+    </gazebo>
+    
 
 </robot>

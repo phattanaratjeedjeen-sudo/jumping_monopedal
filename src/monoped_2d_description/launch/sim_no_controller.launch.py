@@ -1,5 +1,4 @@
 import os
-import time
 
 from ament_index_python.packages import get_package_share_directory
 
@@ -16,13 +15,7 @@ from launch_ros.actions import Node
 def generate_launch_description():
 
     package_name = "monoped_2d_description"
-    controller_package_name = "monoped_controller"
     rviz_file_name = "config.rviz"
-
-    bag_base_dir = os.path.join(os.path.expanduser("~"), "jumping_monopedal", "bag_files")
-    os.makedirs(bag_base_dir, exist_ok=True)
-    bag_output = os.path.join(bag_base_dir, f"bag_{int(time.time())}")
-
 
     spawn_x_val = "0.0"
     spawn_y_val = "0.0"
@@ -53,11 +46,6 @@ def generate_launch_description():
         ),
         launch_arguments={"use_sim_time": "true"}.items()
     )
-
-    bag = ExecuteProcess(
-            cmd=['ros2', 'bag', 'record', '-a', '-o', bag_output],
-            output='screen'
-        )
 
 
     # Gazebo simulation launch
@@ -100,32 +88,6 @@ def generate_launch_description():
         arguments=['effort_controller', '--controller-manager', '/controller_manager'],
     )
 
-    # Reaction Wheel Stabilizer Controller (PID with EFFORT output)
-    # rw_stabilizer = Node(
-    #     package=controller_package_name,
-    #     executable='rw_stabilizer.py',
-    #     name='rw_stabilizer',
-    #     parameters=[
-    #         {'Kp': 10.0},
-    #         {'Ki': 0.1},
-    #         {'Kd': 2.0},
-    #         {'max_torque': 20.0},
-    #         {'dead_zone': 0.005},
-    #         {'control_rate': 100.0},
-    #         {'spring_desired_pos': 0.0},
-    #         {'spring_Kp': 200.0},
-    #         {'spring_Kd': 5.0},
-    #         {'spring_effort_limit': 200.0},
-    #         {'desired_pitch': 0.0},
-    #     ],
-    # )
-
-
-    rw_lqr = Node(
-        package=controller_package_name,
-        executable='rw_lqr.py',
-        name='rw_lqr',
-    )
 
     bridge_params = os.path.join(get_package_share_directory(package_name),'config','gz_bridge.yaml')
     bridge = Node(
@@ -168,16 +130,6 @@ def generate_launch_description():
         )
     )
 
-    # launch_description.add_action(
-    #     RegisterEventHandler(
-    #         event_handler=OnProcessExit(
-    #             target_action=effort_spawner,
-    #             on_exit=[bag],
-    #         )
-    #     )
-    # )
-
-
     # Add launch actions
     launch_description.add_action(rviz)
     launch_description.add_action(world_arg)
@@ -185,7 +137,6 @@ def generate_launch_description():
     launch_description.add_action(rsp)
     launch_description.add_action(spawn_entity)
     launch_description.add_action(bridge)
-    launch_description.add_action(rw_lqr)
 
 
     return launch_description

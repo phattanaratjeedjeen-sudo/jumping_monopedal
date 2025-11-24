@@ -27,10 +27,11 @@
 
     <!-- ============== REACTION WHEEL PARAMETERS ============== -->
     <!-- Reaction wheels on both sides of body for attitude control -->
-    <!-- Larger radius for more inertia, thicker for visibility -->
-    <xacro:property name="rw_r" value="0.08"/>
-    <xacro:property name="rw_l" value="0.03"/>
-    <xacro:property name="mass_rw" value="0.1"/>
+    <!-- Balance: high inertia for control authority, but not too heavy -->
+    <!-- I_wheel = 0.5 * m * r^2 = 0.5 * 1.0 * 0.15^2 ≈ 0.01125 kg.m^2 per wheel -->
+    <xacro:property name="rw_r" value="0.15"/>
+    <xacro:property name="rw_l" value="0.04"/>
+    <xacro:property name="mass_rw" value="1.0"/>
     <!-- Offset from body center (Y-axis) -->
     <xacro:property name="rw_y_offset" value="${b_y/2 + rw_l/2 + 0.01}"/>
 
@@ -44,14 +45,14 @@
 
     <!-- ============== MASS PARAMETERS ============== -->
     <!-- From TD-SLIP model: concentrated body mass with light leg -->
-    <xacro:property name="mass_body" value="1.0"/>
+    <xacro:property name="mass_body" value="3.0"/>
     <xacro:property name="mass_thigh" value="0.05"/>
     <xacro:property name="mass_shank" value="0.05"/>
     <xacro:property name="mass_foot" value="0.02"/>
 
     <!-- ============== JOINT DYNAMICS ============== -->
     <!-- TD-SLIP with damping for Phase 2 -->
-    <xacro:property name="spring_damping" value="0.5"/>
+    <xacro:property name="spring_damping" value="20.0"/>
     <xacro:property name="spring_friction" value="0.0"/>
 
     <!-- ============== SPRING PARAMETERS ============== -->
@@ -69,9 +70,9 @@
 
     <!-- ============== REACTION WHEEL JOINT ============== -->
     <!-- Continuous rotation for reaction wheels -->
-    <xacro:property name="rw_damping" value="0.01"/>
+    <xacro:property name="rw_damping" value="0.02"/>
     <xacro:property name="rw_friction" value="0.0"/>
-    <xacro:property name="rw_effort_limit" value="10"/>
-    <xacro:property name="rw_velocity_limit" value="100"/>
+    <xacro:property name="rw_effort_limit" value="50"/>
+    <xacro:property name="rw_velocity_limit" value="200"/>
 
 </robot>
