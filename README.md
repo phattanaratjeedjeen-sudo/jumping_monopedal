@@ -126,7 +126,7 @@ The robot consists of 5 links connected in series:
 | Symbol | Description | Value/Formula |
 |--------|-------------|---------------|
 | $z_b$ | Body height from ground | Variable (measured by altimeter) |
-| $z_f$ | Foot height from ground | $z_f = z_b - L_0 + q_1 + q_2$ |
+| $z_f$ | Foot height from ground | $z_f = z_b - L_0$ |
 | $L_0$ | Spring equilibrium length | 0.38 m (from body center to foot) |
 | $z$ | Vertical axis | Positive upward from ground (z=0) |
 
