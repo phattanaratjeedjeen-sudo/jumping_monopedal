@@ -49,13 +49,9 @@
                 <cylinder radius="${rw_r}" length="${rw_l}"/>
             </geometry>
         </collision>
-        <inertial>
+        <xacro:inertial_cylinder mass="${mass_rw}" radius="${rw_r}" length="${rw_l}">
             <origin xyz="0 0 0" rpy="0 0 0"/>
-            <mass value="${mass_rw}"/>
-            <inertia ixx="${(1/12) * mass_rw * (3*rw_r*rw_r + rw_l*rw_l)}" ixy="0.0" ixz="0.0"
-                     iyy="${(1/12) * mass_rw * (3*rw_r*rw_r + rw_l*rw_l)}" iyz="0.0"
-                     izz="${(1/2) * mass_rw * rw_r*rw_r}"/>
-        </inertial>
+        </xacro:inertial_cylinder>
     </link>
 
 
@@ -82,13 +78,9 @@
                 <cylinder radius="${rw_r}" length="${rw_l}"/>
             </geometry>
         </collision>
-        <inertial>
+        <xacro:inertial_cylinder mass="${mass_rw}" radius="${rw_r}" length="${rw_l}">
             <origin xyz="0 0 0" rpy="0 0 0"/>
-            <mass value="${mass_rw}"/>
-            <inertia ixx="${(1/12) * mass_rw * (3*rw_r*rw_r + rw_l*rw_l)}" ixy="0.0" ixz="0.0"
-                     iyy="${(1/12) * mass_rw * (3*rw_r*rw_r + rw_l*rw_l)}" iyz="0.0"
-                     izz="${(1/2) * mass_rw * rw_r*rw_r}"/>
-        </inertial>
+        </xacro:inertial_cylinder>
     </link>
 
 
