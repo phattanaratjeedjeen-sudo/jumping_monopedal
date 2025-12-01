@@ -203,6 +203,31 @@
         </xacro:inertial_cylinder>
     </link>
 
+    <!-- <joint name="passive_lower_leg_to_foot" type="fixed">
+        <origin xyz="0 0 ${-shank_l}" rpy="0 0 0"/>
+        <parent link="passive_shank_link"/>
+        <child link="foot_link"/>
+    </joint>
+
+    <link name="foot_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="0.1 0.3 0.01"/>
+            </geometry>
+            <material name="blue"/>
+        </visual>
+        <collision name="foot_collision">
+            <origin xyz="0 0 0"/>
+            <geometry>
+                <box size="0.1 0.3 0.01"/>
+            </geometry>
+        </collision>
+        <xacro:inertial_box mass="${mass_foot}" x="0.1" y="0.3" z="0.01">
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </xacro:inertial_box>
+    </link> -->
+
 
     <gazebo reference="thigh_to_shank">
         <springReference>0.0</springReference>

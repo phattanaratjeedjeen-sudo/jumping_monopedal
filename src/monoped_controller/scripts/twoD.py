@@ -6,7 +6,7 @@ from ament_index_python.packages import get_package_share_directory
 from monoped_description.dummy_module import dummy_function, dummy_var
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import JointState
+from sensor_msgs.msg import JointState, Imu
 from std_msgs.msg import Float64MultiArray
 from ros_gz_interfaces.msg import Altimeter
 import xml.etree.ElementTree as ET
@@ -19,40 +19,26 @@ class DeadBeatController(Node):
         super().__init__('deadbeat_controller')
         self.create_subscription(JointState, '/joint_states', self.joint_states_callback, 10)
         self.create_subscription(Altimeter, '/altimeter_data', self.altimeter_callback, 10)
+        self.create_subscription(Imu, '/imu_data', self.imu_callback, 10)
         self.effort_publisher = self.create_publisher(Float64MultiArray, '/effort_controller/commands', 10)
         # Single debug topic carrying combined state for easier plotting/logging
         self.debug_state_publisher = self.create_publisher(Float64MultiArray, '/debug_state', 10)
 
-        tree_path = os.path.join(get_package_share_directory('monoped_description'), "urdf", "robot_params.xacro")
-        tree = ET.parse(tree_path)
-        xacro_ns = {'xacro': 'http://www.ros.org/wiki/xacro'}
-        root = tree.getroot()
-
-        self.mass = []
-        mass_properties = ['mass_body', 'mass_foot']
-        for properties in mass_properties:
-            xpath_query = f"xacro:property[@name='{properties}']"
-            property_element = root.find(xpath_query, xacro_ns)
-            value = float(property_element.get('value'))
-            self.mass.append(value)
-
-        self.dimension = [] 
-        dimension_properties = ['b2ul', 'ul2ll', 'll2f', 'f_r']
-        for properties in dimension_properties:
-            xpath_query = f"xacro:property[@name='{properties}']"
-            property_element = root.find(xpath_query, xacro_ns)
-            value = float(property_element.get('value'))
-            self.dimension.append(value)
-        self.l0 = 0.38         # spring equilibrium (m) (0.125 + 0.1 + 0.1 + 0.05 + 0.005) base from urdf
+        # Mass parameters [kg]
+        self.mass_body = 0.1
+        self.mass_foot = 0.1
+        self.mass_rw = 1.0*2
+        
+        self.l0 = 0.30         # spring equilibrium (m) base from urdf
         self.zf = 0.0          # foot height (m)
         self.zb = 0.0          # body height (m)
         self.zb_dot = 0.0      # body velocity (m/s)
-        self.Hk = None          # actual height of current hop (m)
+        self.Hk = None         # actual height of current hop (m)
         self.Hc = 0.0          # value given to controller as apex height of current hop (m)
-        self.Hd = 0.6          # desired height to reach at apex of next hop (m)
+        self.Hd = 1.0          # desired height to reach at apex of next hop (m)
         self.Ls = self.l0
         self.g = 9.81          # gravity acc (m/s^2)
-        self.ks = 1000         # spring stiffness (N/m)
+        self.ks = 10000         # spring stiffness (N/m)
         self.desired_compression = 0.0 # spring compressed (m)
         self.altimeter = [0, 0, 0]     # altimeater sensor data [position, vel, ref]
         self.state = 'air' # initial state
@@ -61,9 +47,40 @@ class DeadBeatController(Node):
         self.measurement_noise_std = 0.01  # e.g. 1 cm noise
         self.zb_dot_prev = 0.0
         self.u = 0.0
+        self.effort_command = 0.0
+
+        self.Kg = [13.367, 1.5512]  # gain for ground phase
+        self.Kf = [112.545, 4.5]    # gain for flight phase
+        self.Nf = 112.545           # Nbar for flight phase
+        self.Ng = 13.9              # Nbar for ground phase
+        self.theta_desired = 90.0   # desired body pitch angle (deg)  
+        self.theta = 90.0        
+        self.theta_dot = 0.0
+        self.torque = 0.0           # torque command (Nm)
 
         self.create_timer(0.01, self.timer_callback)
 
+
+    def imu_callback(self, msg: Imu):
+        qw = msg.orientation.w
+        qx = msg.orientation.x
+        qy = msg.orientation.y
+        qz = msg.orientation.z
+        
+        self.theta_dot = msg.angular_velocity.y * 180.0 / math.pi
+        # Calculate pitch angle
+        sinp = 2.0 * (qw * qy - qz * qx)
+        if abs(sinp) >= 1:
+            theta_rad = math.copysign(math.pi / 2, sinp)
+        else:
+            theta_rad = math.asin(sinp)
+        theta_raw = theta_rad * 180.0 / math.pi
+        theta_candidate = theta_raw + 11.0
+        
+        # Only accept readings near 90° (filter out -68° readings)
+        if abs(theta_candidate - 90.0) < 45.0:  # Accept ±45° around 90°
+            self.theta = theta_candidate
+            # self.get_logger().info(f'IMU theta,theta_dot: {self.theta:.2f} deg, {self.theta_dot:.2f} deg/s')
 
     def publish_debug_state(self, effort=None):
         """
@@ -85,15 +102,16 @@ class DeadBeatController(Node):
             self.u,
             effort_val,
             state_code,
+            self.theta,
+            self.theta_dot
         ]
         self.debug_state_publisher.publish(msg)
 
-    def pub_effort(self, effort):
+    def pub_effort(self, force, torque):
         msg = Float64MultiArray()
-        msg.data = [effort]
+        msg.data = [force, torque*0.5, -torque*0.5]  # [thigh_to_shank, body_to_rw_left, body_to_rw_right]
         self.effort_publisher.publish(msg)
-        self.publish_debug_state(effort)
-
+        self.publish_debug_state(force) 
 
     def altimeter_callback(self, msg: Altimeter):
         self.altimeter = np.array([msg.vertical_position, msg.vertical_velocity, msg.vertical_reference])
@@ -114,8 +132,9 @@ class DeadBeatController(Node):
                         self.air_delay,
                         self.air_to_compress_callback
                     )
-        elif self.state == 'compress' and self.zf <= 0:
+        elif self.state == 'compress' and self.zf <= 0.01:
             self.state = 'touchdown'
+            self.command_pub()
 
         elif self.state == 'touchdown' and self.zb_dot >= 0:
             self.state = 'rebound'
@@ -136,15 +155,26 @@ class DeadBeatController(Node):
 
 
     def joint_states_callback(self, msg: JointState):
-        self.zf = self.zb - 0.125 - 0.05 -0.005 - (0.1 - msg.position[0]) - (0.1 - msg.position[1])
+        self.zf = self.zb - 0.15/2 - 0.15 - 0.015 - (0.15 - msg.position[0]) - (0.15 - msg.position[1])
         self.publish_debug_state()
 
+
     def timer_callback(self):
+        if self.state == 'compress':
+            self.theta_desired = 90.0
+            self.torque_compute(self.Nf, self.theta_desired, self.Kf)
+            self.pub_effort(self.effort_command, self.torque)
+            self.get_logger().info(f'Compress State: Effort={self.effort_command:.2f} N, Torque={self.torque:.2f} Nm')
+        elif self.state == 'touchdown' or self.state == 'rebound':
+            self.theta_desired = 90.0
+            self.torque_compute(self.Ng, self.theta_desired, self.Kg)
+            self.pub_effort(self.effort_command, self.torque)
+            self.get_logger().info(f'{self.state.capitalize()} State: Effort={self.effort_command:.2f} N, Torque={self.torque:.2f} Nm') 
         self.state_manager()
 
 
     def command_pub(self):
-        msg = Float64MultiArray()
+        
         if self.state == 'compress':
             if self.Hk is None:
                 self.get_logger().warn("Hk is None, skip compress command")
@@ -153,25 +183,30 @@ class DeadBeatController(Node):
             # self.Hc = self.Hd
             # Case2: Hc with noise
             self.Hc = random.gauss(self.Hk, self.measurement_noise_std)
-            El = self.mass[1] * self.g * (self.Hc - self.Ls) 
-            Et = (self.mass[0] + self.mass[1]) * self.g * (self.Hd - self.Ls) * (self.mass[1] / self.mass[0])
-            Eh = (self.mass[0] + self.mass[1]) * self.g *(self.Hd - self.Hc) 
+            El = self.mass_foot * self.g * (self.Hc - self.Ls) 
+            Et = (self.mass_body + self.mass_rw + self.mass_foot) * self.g * (self.Hd - self.Ls) * (self.mass_foot / (self.mass_body + self.mass_rw))
+            Eh = (self.mass_body + self.mass_rw + self.mass_foot) * self.g *(self.Hd - self.Hc) 
             self.u = El + Et + Eh
+
             if self.u <= 0.0:
                 self.desired_compression = 0.0
-                effort_command = 0.0
+                self.effort_command = 0.0
             else:
                 self.desired_compression = math.sqrt(2.0 * self.u / self.ks)
-                effort_command = self.desired_compression * self.ks
+                self.effort_command = self.desired_compression * self.ks
 
-            self.pub_effort(effort_command)
+            self.pub_effort(self.effort_command, self.torque)
             
-        elif self.state == 'rebound':
+        if self.state == 'rebound':
             # become free joint
-            msg.data = [0.0]
-            self.pub_effort(0.0)
+            self.effort_command = 0.0
+            self.pub_effort(self.effort_command, self.torque)
             self.publish_debug_state(0.0)
+    
 
+    def torque_compute(self,Nbar,theta_desired,K):
+        self.torque = theta_desired*Nbar*math.pi/180 - (K[0]*(self.theta) + K[1]*self.theta_dot)
+        
 
 def main(args=None):
     rclpy.init(args=args)

@@ -26,7 +26,7 @@ def generate_launch_description():
 
     spawn_x_val = "0.0"
     spawn_y_val = "0.0"
-    spawn_z_val = "0.60"
+    spawn_z_val = "1.5"
 
     # Paths
     rviz_file_path = os.path.join(get_package_share_directory(package_name), "rviz", rviz_file_name)
@@ -121,10 +121,10 @@ def generate_launch_description():
     # )
 
 
-    rw_lqr = Node(
+    twoD_controller = Node(
         package=controller_package_name,
-        executable='rw_lqr.py',
-        name='rw_lqr',
+        executable='twoD.py',
+        name='twoD_controller',
     )
 
     bridge_params = os.path.join(get_package_share_directory(package_name),'config','gz_bridge.yaml')
@@ -179,13 +179,13 @@ def generate_launch_description():
 
 
     # Add launch actions
-    launch_description.add_action(rviz)
+    # launch_description.add_action(rviz)
     launch_description.add_action(world_arg)
     launch_description.add_action(gz_sim)
     launch_description.add_action(rsp)
     launch_description.add_action(spawn_entity)
     launch_description.add_action(bridge)
-    launch_description.add_action(rw_lqr)
+    launch_description.add_action(twoD_controller)
 
 
     return launch_description
