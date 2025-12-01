@@ -13,6 +13,7 @@ import xml.etree.ElementTree as ET
 from math import sqrt
 import numpy as np
 import random
+from tf_transformations import euler_from_quaternion
 
 class DeadBeatController(Node):
     def __init__(self):
@@ -62,25 +63,11 @@ class DeadBeatController(Node):
 
 
     def imu_callback(self, msg: Imu):
-        qw = msg.orientation.w
-        qx = msg.orientation.x
-        qy = msg.orientation.y
-        qz = msg.orientation.z
-        
-        self.theta_dot = msg.angular_velocity.y * 180.0 / math.pi
-        # Calculate pitch angle
-        sinp = 2.0 * (qw * qy - qz * qx)
-        if abs(sinp) >= 1:
-            theta_rad = math.copysign(math.pi / 2, sinp)
-        else:
-            theta_rad = math.asin(sinp)
-        theta_raw = theta_rad * 180.0 / math.pi
-        theta_candidate = theta_raw + 11.0
-        
-        # Only accept readings near 90° (filter out -68° readings)
-        if abs(theta_candidate - 90.0) < 45.0:  # Accept ±45° around 90°
-            self.theta = theta_candidate
-            # self.get_logger().info(f'IMU theta,theta_dot: {self.theta:.2f} deg, {self.theta_dot:.2f} deg/s')
+        q = msg.orientation
+        quaternion = [q.x, q.y, q.z, q.w]
+        roll, pitch, yaw = euler_from_quaternion(quaternion)
+        self.theta = pitch
+        self.theta_dot = msg.angular_velocity.y
 
     def publish_debug_state(self, effort=None):
         """
