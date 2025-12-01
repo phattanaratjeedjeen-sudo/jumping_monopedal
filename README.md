@@ -55,7 +55,7 @@ graph TB
 - **Deadbeat Controller**: Main control logic with state machine and energy calculation
 - **ros_gz_bridge**: Bridges Gazebo topics to ROS2
 
-### Phase 2: 2-d Monopedal Robot Model With Reaction Wheel (damped case)
+### Phase 2: 2-d Monopedal Robot Model With Reaction Wheel (undamped case)
 Comming soon!
 
 ## Installation
@@ -218,6 +218,111 @@ The Poincaré map shows the relationship between current apex height (Hk) and ne
 2. **Stable Periodic Orbit**: System converges to a stable limit cycle
 3. **Small Steady-State Error**: Mean height (0.52m) slightly above target (0.50m) due to simulation dynamics
 
+## 2D Monopedal Robot Model With Reaction Wheel (undamped case)
+
+This implementation is based on the **Torque Driven Spring Loaded Inverted Pendulum (TD-SLIP)** model described in [[2]](#references). Or You can read the full report [here](./2407.12120%202.pdf).
+
+By this phase are develop base from Phase 1 [1-d Monopedal Robot Model With Deadbeat Controller (undamped case)](#1-d-monopedal-robot-model-with-deadbeat-controller-undamped-case).
+
+
+
+### Model Description
+
+will be updated Image diagram soon!
+<!-- ![2D Model Diagram](images/2d_model.png) -->
+
+#### TF Tree (URDF Structure)
+
+<p align="center">
+  <img src="images/tf_phase2.png" alt="TF Tree" width="400">
+</p>
+
+#### Model Parameters
+
+| Parameter | Symbol | Value |
+|-----------|--------|-------|
+| Body mass | $M_b$ | 0.5 kg |
+| Reaction wheel mass (per wheel) | $M_{rw}$ | 0.1 kg |
+| Thigh mass | $M_{thigh}$ | 0.01 kg |
+| Shank mass | $M_{shank}$ | 0.01 kg |
+| Foot mass | $M_{foot}$ | 0.01 kg |
+| Spring stiffness | $k_s$ | 1000 N/m |
+| Spring equilibrium length | $L_0$ | 0.55 m |
+| Reaction wheel damping | $b_{rw}$ | 1.0 N·m·s/rad |
+
+### Controller Design
+
+The 2D controller combines vertical hopping control with pitch stabilization using reaction wheels:
+
+#### Vertical Control (TD-SLIP)
+Similar to Phase 1, uses deadbeat control for hop height regulation with state-dependent spring force.
+
+#### Pitch Stabilization (Reaction Wheel)
+Uses a state-feedback controller with torque saturation and rate limiting:
+
+$$\tau = N_{bar} \theta_d - (K_0 \theta + K_1 \dot{\theta})$$
+
+**Saturation Constraints:**
+- Maximum torque: $|\tau| \leq 2.5$ Nm
+- Torque rate limit: $|\dot{\tau}| \leq 10$ Nm/s
+
+**Control Gains:**
+- Ground phase: $K_g = [2.895, 0.257]$, $N_g = 2.9$
+- Flight phase: $K_f = [14.068, 0.5625]$, $N_f = 14.068$
+
+**Stability Mechanisms:**
+1. **Torque Saturation**: Prevents excessive control effort
+2. **Rate Limiting**: Smooths torque commands to prevent oscillations
+3. **Joint Damping**: Passive damping (1.0 N·m·s/rad) reduces wheel overshoot
+
+### Demo Video
+
+*Demo video will be added here*
+
+<!-- ![demo_video](images/demo-phase2.gif) -->
+
+<!-- For better view please watch the [video here](images/demo-phase2.mp4). -->
+
+### Simulation Results
+
+*Simulation results will be added after testing*
+
+<!-- 
+| Parameter | Value |
+|-----------|-------|
+| Desired height (Hd) | 0.50 m |
+| Mean apex height | TBD |
+| Mean pitch angle | TBD |
+| Std deviation (height) | TBD |
+| Std deviation (pitch) | TBD |
+| Number of hops | TBD |
+| Convergence time | TBD |
+-->
+
+#### Hopping and Attitude Behavior Analysis
+
+*Analysis plots will be added here*
+
+<!-- ![Hopping Analysis](images/2d_hopping_analysis.png) -->
+
+<!--
+**Plot Description:**
+1. **Top**: Body height and pitch angle over time
+2. **Second**: Reaction wheel torque commands
+3. **Third**: Angular velocity of body and reaction wheels
+4. **Bottom**: Phase portrait showing pitch angle vs angular velocity
+-->
+
+### Key Observations
+
+*Key observations will be added after experimental results*
+
+<!--
+1. **Attitude Stabilization**: Reaction wheels successfully maintain near-vertical orientation during flight
+2. **Coupled Dynamics**: Vertical hopping and pitch control interact during takeoff/landing
+3. **Torque Saturation Effects**: Rate limiting prevents instability from aggressive control
+4. **Energy Efficiency**: TBD analysis of energy consumption vs hopping performance
+-->
 
 ## Members
 

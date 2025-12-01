@@ -15,9 +15,9 @@ import numpy as np
 import random
 from tf_transformations import euler_from_quaternion
 
-class DeadBeatController(Node):
+class TwoDController(Node):
     def __init__(self):
-        super().__init__('deadbeat_controller')
+        super().__init__('TwoD_controller')
         self.create_subscription(JointState, '/joint_states', self.joint_states_callback, 10)
         self.create_subscription(Altimeter, '/altimeter_data', self.altimeter_callback, 10)
         self.create_subscription(Imu, '/imu_data', self.imu_callback, 10)
@@ -28,7 +28,7 @@ class DeadBeatController(Node):
         # Mass parameters [kg]
         self.mass_body = 0.5
         self.mass_foot = 0.1
-        self.mass_rw = 0.1*2
+        self.mass_rw = 0.25*2
         
         self.l0 = 0.30         # spring equilibrium (m) base from urdf
         self.zf = 0.0          # foot height (m)
@@ -50,10 +50,13 @@ class DeadBeatController(Node):
         self.u = 0.0
         self.effort_command = 0.0
 
-        self.Kg = [11.579, 1.028]  # gain for ground phase
-        self.Kf = [56.2725, 2.25]    # gain for flight phase
-        self.Nf = 56.2725           # Nbar for flight phase
-        self.Ng = 11.6              # Nbar for ground phase
+        self.Kg = [11.579/4, 1.028/4]  # or [2.895, 0.257]
+        self.Kf = [56.2725/4, 2.25/4]  # or [14.068, 0.5625]
+        self.Nf = 56.2725/4  # or 14.068
+        self.Ng = 11.6/4     # or 2.9
+        self.max_torque = 1.0  # maximum torque limit (Nm)
+        self.max_torque_rate = 10.0  # max torque change per second (Nm/s) - reduced for smoother control
+        self.prev_torque = 0.0  # previous torque command
         self.theta_desired = 90.0   # desired body pitch angle (deg)  
         self.theta = 90.0        
         self.theta_dot = 0.0
@@ -146,7 +149,7 @@ class DeadBeatController(Node):
             self.torque_compute(self.Ng, self.theta_desired, self.Kg)
             self.pub_effort(self.effort_command, self.torque)
             # self.get_logger().info(f'{self.state.capitalize()} State: Effort={self.effort_command:.2f} N, Torque={self.torque:.2f} Nm')
-        self.get_logger().info(f'State: {self.state}, zb: {self.zb:.2f}, Zb_dot: {self.zb_dot:.2f}, zf: {self.zf:.2f}, T: {self.torque:.2f}, theta: {self.theta:.2f}, theta_dot = {self.theta_dot:.2f}' ) 
+        self.get_logger().info(f'State: {self.state}, zb: {self.zb:.2f}, Zb_dot: {self.zb_dot:.2f}, zf: {self.zf:.2f}, T: {self.torque:.2f}, theta: {self.theta:.2f}, theta_dot = {self.theta_dot:.2f}, torque = {self.torque:.2f}' ) 
         
         
 
@@ -183,20 +186,32 @@ class DeadBeatController(Node):
 
     def torque_compute(self, Nbar, theta_desired, K):
         theta_desired_rad = theta_desired * math.pi / 180.0
-        theta_dot = self.theta_dot * math.pi / 180.0
-        theta = self.theta * math.pi / 180.0
-        self.torque = theta_desired_rad * Nbar - (K[0] * theta + K[1] * theta_dot)
+        theta_dot_rad = self.theta_dot * math.pi / 180.0
+        theta_rad = self.theta * math.pi / 180.0
+        
+        # Compute desired torque
+        raw_torque = theta_desired_rad * Nbar - (K[0] * theta_rad + K[1] * theta_dot_rad)
+        saturated_torque = np.clip(raw_torque, -self.max_torque, self.max_torque)
+        
+        # Apply rate limiting to prevent sudden torque changes (smooths control)
+        dt = 0.01  # 10ms timer period
+        max_change = self.max_torque_rate * dt
+        torque_change = saturated_torque - self.prev_torque
+        limited_change = np.clip(torque_change, -max_change, max_change)
+        
+        self.torque = self.prev_torque + limited_change
+        self.prev_torque = self.torque
 
     def pub_effort(self, force, torque):
         msg = Float64MultiArray()
-        msg.data = [0.0, torque*0.25, -torque*0.25]  # [thigh_to_shank, body_to_rw_left, body_to_rw_right]
+        msg.data = [force, torque, -torque]  # [thigh_to_shank, body_to_rw_left, body_to_rw_right]
         self.effort_publisher.publish(msg)
         self.publish_debug_state(force) 
         
 
 def main(args=None):
     rclpy.init(args=args)
-    node = DeadBeatController()
+    node = TwoDController()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()

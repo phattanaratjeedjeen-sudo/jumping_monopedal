@@ -1,14 +1,5 @@
 #!/usr/bin/python3
-"""
-Bag file analyzer for 2D hopping monoped robot simulation.
-Extracts data from ROS2 bag files and generates analysis plots.
 
-Usage:
-    python3 bag_analyzer_2d.py <bag_path> [output_dir]
-
-Example:
-    python3 bag_analyzer_2d.py ~/jumping_monopedal/bag_files/bag_1764598703
-"""
 
 import sys
 import os
@@ -170,7 +161,7 @@ def print_statistics(data: dict, apex_heights: np.ndarray):
 
 
 def plot_hopping_analysis(data: dict, apex_heights: np.ndarray, apex_times: np.ndarray,
-                          output_path: str, time_window: float = None):
+                          output_path: str, time_window: float = 30.0):
     """
     Generate hopping analysis plot with 6 subplots.
     """
