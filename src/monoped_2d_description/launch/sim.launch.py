@@ -75,7 +75,7 @@ def generate_launch_description():
         arguments=[
             "-topic", "robot_description",
             "-entity", "monoped_2d",
-            '-timeout', '120.0',
+            '-timeout', '5.0',
             "-x", spawn_x_val,
             "-y", spawn_y_val,
             "-z", spawn_z_val,
@@ -100,25 +100,7 @@ def generate_launch_description():
         arguments=['effort_controller', '--controller-manager', '/controller_manager'],
     )
 
-    # Reaction Wheel Stabilizer Controller (PID with EFFORT output)
-    # rw_stabilizer = Node(
-    #     package=controller_package_name,
-    #     executable='rw_stabilizer.py',
-    #     name='rw_stabilizer',
-    #     parameters=[
-    #         {'Kp': 10.0},
-    #         {'Ki': 0.1},
-    #         {'Kd': 2.0},
-    #         {'max_torque': 20.0},
-    #         {'dead_zone': 0.005},
-    #         {'control_rate': 100.0},
-    #         {'spring_desired_pos': 0.0},
-    #         {'spring_Kp': 200.0},
-    #         {'spring_Kd': 5.0},
-    #         {'spring_effort_limit': 200.0},
-    #         {'desired_pitch': 0.0},
-    #     ],
-    # )
+
 
 
     twoD_controller = Node(
@@ -168,18 +150,18 @@ def generate_launch_description():
         )
     )
 
-    # launch_description.add_action(
-    #     RegisterEventHandler(
-    #         event_handler=OnProcessExit(
-    #             target_action=effort_spawner,
-    #             on_exit=[bag],
-    #         )
-    #     )
-    # )
+    launch_description.add_action(
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=effort_spawner,
+                on_exit=[bag],
+            )
+        )
+    )
 
 
     # Add launch actions
-    # launch_description.add_action(rviz)
+    launch_description.add_action(rviz)
     launch_description.add_action(world_arg)
     launch_description.add_action(gz_sim)
     launch_description.add_action(rsp)

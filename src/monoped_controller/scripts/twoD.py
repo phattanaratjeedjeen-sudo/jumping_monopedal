@@ -26,9 +26,9 @@ class DeadBeatController(Node):
         self.debug_state_publisher = self.create_publisher(Float64MultiArray, '/debug_state', 10)
 
         # Mass parameters [kg]
-        self.mass_body = 0.1
+        self.mass_body = 0.5
         self.mass_foot = 0.1
-        self.mass_rw = 1.0*2
+        self.mass_rw = 0.1*2
         
         self.l0 = 0.30         # spring equilibrium (m) base from urdf
         self.zf = 0.0          # foot height (m)
@@ -39,7 +39,7 @@ class DeadBeatController(Node):
         self.Hd = 1.0          # desired height to reach at apex of next hop (m)
         self.Ls = self.l0
         self.g = 9.81          # gravity acc (m/s^2)
-        self.ks = 10000         # spring stiffness (N/m)
+        self.ks = 1000         # spring stiffness (N/m)
         self.desired_compression = 0.0 # spring compressed (m)
         self.altimeter = [0, 0, 0]     # altimeater sensor data [position, vel, ref]
         self.state = 'air' # initial state
@@ -50,10 +50,10 @@ class DeadBeatController(Node):
         self.u = 0.0
         self.effort_command = 0.0
 
-        self.Kg = [13.367, 1.5512]  # gain for ground phase
-        self.Kf = [112.545, 4.5]    # gain for flight phase
-        self.Nf = 112.545           # Nbar for flight phase
-        self.Ng = 13.9              # Nbar for ground phase
+        self.Kg = [11.579, 1.028]  # gain for ground phase
+        self.Kf = [56.2725, 2.25]    # gain for flight phase
+        self.Nf = 56.2725           # Nbar for flight phase
+        self.Ng = 11.6              # Nbar for ground phase
         self.theta_desired = 90.0   # desired body pitch angle (deg)  
         self.theta = 90.0        
         self.theta_dot = 0.0
@@ -66,8 +66,8 @@ class DeadBeatController(Node):
         q = msg.orientation
         quaternion = [q.x, q.y, q.z, q.w]
         roll, pitch, yaw = euler_from_quaternion(quaternion)
-        self.theta = pitch
-        self.theta_dot = msg.angular_velocity.y
+        self.theta = 90 - pitch * 180.0 / math.pi
+        self.theta_dot = msg.angular_velocity.y * 180.0 / math.pi
 
     def publish_debug_state(self, effort=None):
         """
@@ -75,22 +75,16 @@ class DeadBeatController(Node):
         Data layout: [zb, zb_dot, zf, Hk, Hc, Hd, u, effort, state_code]
         state_code: air=0, compress=1, touchdown=2, rebound=3, unknown=-1
         """
-        hk_val = self.Hk if self.Hk is not None else float('nan')
         effort_val = effort if effort is not None else self.u
         state_code = {'air': 0.0, 'compress': 1.0, 'touchdown': 2.0, 'rebound': 3.0}.get(self.state, -1.0)
         msg = Float64MultiArray()
         msg.data = [
             self.zb,
-            self.zb_dot,
             self.zf,
-            hk_val,
-            self.Hc,
-            self.Hd,
-            self.u,
             effort_val,
-            state_code,
             self.theta,
-            self.theta_dot
+            self.theta_dot,
+            self.torque
         ]
         self.debug_state_publisher.publish(msg)
 
@@ -142,7 +136,8 @@ class DeadBeatController(Node):
 
 
     def joint_states_callback(self, msg: JointState):
-        self.zf = self.zb - 0.15/2 - 0.15 - 0.015 - (0.15 - msg.position[0]) - (0.15 - msg.position[1])
+        # self.zf = self.zb - 0.15/2 - 0.15 - 0.015 - (0.15 - msg.position[0]) - (0.15 - msg.position[1])
+        self.zf = self.zb - 0.075 - 0.15 - 0.15 - 0.15 + msg.position[0] + msg.position[1]
         self.publish_debug_state()
 
 
@@ -191,8 +186,11 @@ class DeadBeatController(Node):
             self.publish_debug_state(0.0)
     
 
-    def torque_compute(self,Nbar,theta_desired,K):
-        self.torque = theta_desired*Nbar*math.pi/180 - (K[0]*(self.theta) + K[1]*self.theta_dot)
+    def torque_compute(self, Nbar, theta_desired, K):
+        theta_desired_rad = theta_desired * math.pi / 180.0
+        theta_dot = self.theta_dot * math.pi / 180.0
+        theta = self.theta * math.pi / 180.0
+        self.torque = theta_desired_rad * Nbar - (K[0] * theta + K[1] * theta_dot)
         
 
 def main(args=None):
