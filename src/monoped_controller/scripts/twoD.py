@@ -36,7 +36,7 @@ class DeadBeatController(Node):
         self.zb_dot = 0.0      # body velocity (m/s)
         self.Hk = None         # actual height of current hop (m)
         self.Hc = 0.0          # value given to controller as apex height of current hop (m)
-        self.Hd = 1.0          # desired height to reach at apex of next hop (m)
+        self.Hd = 1.5          # desired height to reach at apex of next hop (m)
         self.Ls = self.l0
         self.g = 9.81          # gravity acc (m/s^2)
         self.ks = 1000         # spring stiffness (N/m)
@@ -44,7 +44,7 @@ class DeadBeatController(Node):
         self.altimeter = [0, 0, 0]     # altimeater sensor data [position, vel, ref]
         self.state = 'air' # initial state
         self.air_state_timer = None
-        self.air_delay = 0.05
+        self.air_delay = 0.01
         self.measurement_noise_std = 0.01  # e.g. 1 cm noise
         self.zb_dot_prev = 0.0
         self.u = 0.0
@@ -67,7 +67,7 @@ class DeadBeatController(Node):
         quaternion = [q.x, q.y, q.z, q.w]
         roll, pitch, yaw = euler_from_quaternion(quaternion)
         self.theta = 90 - pitch * 180.0 / math.pi
-        self.theta_dot = msg.angular_velocity.y * 180.0 / math.pi
+        self.theta_dot = - msg.angular_velocity.y * 180.0 / math.pi
 
     def publish_debug_state(self, effort=None):
         """
@@ -88,12 +88,6 @@ class DeadBeatController(Node):
         ]
         self.debug_state_publisher.publish(msg)
 
-    def pub_effort(self, force, torque):
-        msg = Float64MultiArray()
-        msg.data = [force, torque*0.5, -torque*0.5]  # [thigh_to_shank, body_to_rw_left, body_to_rw_right]
-        self.effort_publisher.publish(msg)
-        self.publish_debug_state(force) 
-
     def altimeter_callback(self, msg: Altimeter):
         self.altimeter = np.array([msg.vertical_position, msg.vertical_velocity, msg.vertical_reference])
         self.zb = self.altimeter[2] - (-self.altimeter[0])
@@ -113,11 +107,11 @@ class DeadBeatController(Node):
                         self.air_delay,
                         self.air_to_compress_callback
                     )
-        elif self.state == 'compress' and self.zf <= 0.01:
+        elif self.state == 'compress' and self.zf <= 0.00001:
             self.state = 'touchdown'
             self.command_pub()
 
-        elif self.state == 'touchdown' and self.zb_dot >= 0:
+        elif self.state == 'touchdown' and self.zb_dot > 0:
             self.state = 'rebound'
             self.command_pub()
         
@@ -136,27 +130,28 @@ class DeadBeatController(Node):
 
 
     def joint_states_callback(self, msg: JointState):
-        # self.zf = self.zb - 0.15/2 - 0.15 - 0.015 - (0.15 - msg.position[0]) - (0.15 - msg.position[1])
-        self.zf = self.zb - 0.075 - 0.15 - 0.15 - 0.15 + msg.position[0] + msg.position[1]
+        self.zf = self.zb - 0.075 - 0.17 - 0.15 - 0.15 + msg.position[0] + msg.position[1]
         self.publish_debug_state()
 
 
     def timer_callback(self):
-        if self.state == 'compress':
-            self.theta_desired = 90.0
+        self.state_manager()
+        if self.state == 'compress' or self.state == 'air':
+            # self.theta_desired = 90.0
             self.torque_compute(self.Nf, self.theta_desired, self.Kf)
             self.pub_effort(self.effort_command, self.torque)
-            self.get_logger().info(f'Compress State: Effort={self.effort_command:.2f} N, Torque={self.torque:.2f} Nm')
+            # self.get_logger().info(f'Compress State: Effort={self.effort_command:.2f} N, Torque={self.torque:.2f} Nm')
         elif self.state == 'touchdown' or self.state == 'rebound':
             self.theta_desired = 90.0
             self.torque_compute(self.Ng, self.theta_desired, self.Kg)
             self.pub_effort(self.effort_command, self.torque)
-            self.get_logger().info(f'{self.state.capitalize()} State: Effort={self.effort_command:.2f} N, Torque={self.torque:.2f} Nm') 
-        self.state_manager()
+            # self.get_logger().info(f'{self.state.capitalize()} State: Effort={self.effort_command:.2f} N, Torque={self.torque:.2f} Nm')
+        self.get_logger().info(f'State: {self.state}, zb: {self.zb:.2f}, Zb_dot: {self.zb_dot:.2f}, zf: {self.zf:.2f}, T: {self.torque:.2f}, theta: {self.theta:.2f}, theta_dot = {self.theta_dot:.2f}' ) 
+        
+        
 
 
     def command_pub(self):
-        
         if self.state == 'compress':
             if self.Hk is None:
                 self.get_logger().warn("Hk is None, skip compress command")
@@ -183,7 +178,7 @@ class DeadBeatController(Node):
             # become free joint
             self.effort_command = 0.0
             self.pub_effort(self.effort_command, self.torque)
-            self.publish_debug_state(0.0)
+            # self.publish_debug_state(0.0)
     
 
     def torque_compute(self, Nbar, theta_desired, K):
@@ -191,6 +186,12 @@ class DeadBeatController(Node):
         theta_dot = self.theta_dot * math.pi / 180.0
         theta = self.theta * math.pi / 180.0
         self.torque = theta_desired_rad * Nbar - (K[0] * theta + K[1] * theta_dot)
+
+    def pub_effort(self, force, torque):
+        msg = Float64MultiArray()
+        msg.data = [0.0, torque*0.25, -torque*0.25]  # [thigh_to_shank, body_to_rw_left, body_to_rw_right]
+        self.effort_publisher.publish(msg)
+        self.publish_debug_state(force) 
         
 
 def main(args=None):

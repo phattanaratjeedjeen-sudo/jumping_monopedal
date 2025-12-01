@@ -27,6 +27,8 @@ def generate_launch_description():
     spawn_x_val = "0.0"
     spawn_y_val = "0.0"
     spawn_z_val = "1.5"
+    spawn_pitch_val = "0.2"
+
 
     # Paths
     rviz_file_path = os.path.join(get_package_share_directory(package_name), "rviz", rviz_file_name)
@@ -79,6 +81,7 @@ def generate_launch_description():
             "-x", spawn_x_val,
             "-y", spawn_y_val,
             "-z", spawn_z_val,
+            "-pitch", spawn_pitch_val,
         ],
         output="screen"
     )
@@ -150,14 +153,14 @@ def generate_launch_description():
         )
     )
 
-    launch_description.add_action(
-        RegisterEventHandler(
-            event_handler=OnProcessExit(
-                target_action=effort_spawner,
-                on_exit=[bag],
-            )
-        )
-    )
+    # launch_description.add_action(
+    #     RegisterEventHandler(
+    #         event_handler=OnProcessExit(
+    #             target_action=effort_spawner,
+    #             on_exit=[bag],
+    #         )
+    #     )
+    # )
 
 
     # Add launch actions
