@@ -408,6 +408,12 @@ This yields the stance phase gain: $K_g = [11.5792, 1.0208, 0.0000, 0.0000]$
 **Command Feedforward:**
 The feedforward gain $N_g$ is computed using the `rscale` function and tuned to $N_g = 11.6$.
 
+**MATLAB Implementation:**
+The controller gains are computed offline using MATLAB. The implementation can be found in the [matlab](matlab/) directory:
+- [twoD.m](matlab/twoD.m) - Main script for computing LQR gains (ground phase) and pole placement gains (flight phase)
+- [rscale.m](matlab/rscale.m) - Function to compute feedforward gain $N$ for step reference tracking
+- [twoD_ground.slx](matlab/twoD_ground.slx) - Simulink model for system simulation
+
 **Control Law:**
 
 $$\tau = N_g \theta_d - K_g (\mathbf{x} - \mathbf{x}_d)$$
@@ -417,6 +423,12 @@ Where $\theta_d$ is the desired pitch angle (90°).
 **Saturation Constraints:**
 - Maximum torque: $|\tau| \leq 2.5$ Nm
 - Torque rate limit: $|\dot{\tau}| \leq 10$ Nm/s
+
+**Flight Phase Controller:**
+During flight, the system dynamics simplify to a 2-state system since leg length is not controllable. The flight controller uses pole placement with Ackermann's formula:
+- State vector: $\mathbf{x}_f = [\theta, \dot{\theta}]^T$
+- Desired poles: $p = -50 \pm 1i$ (fast, slightly underdamped response)
+- Includes wheel damping: $b_w = 0.001$ N·m·s/rad
 
 **Control Gains:**
 - Ground phase: $K_g = [11.58, 1.02, 0.0, 0.0]$, $N_g = 11.6$
