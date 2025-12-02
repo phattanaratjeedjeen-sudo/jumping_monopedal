@@ -420,10 +420,6 @@ $$\tau = N_g \theta_d - K_g (\mathbf{x} - \mathbf{x}_d)$$
 
 Where $\theta_d$ is the desired pitch angle (90°).
 
-**Saturation Constraints:**
-- Maximum torque: $|\tau| \leq 2.5$ Nm
-- Torque rate limit: $|\dot{\tau}| \leq 10$ Nm/s
-
 **Flight Phase Controller:**
 During flight, the system dynamics simplify to a 2-state system since leg length is not controllable. The flight controller uses pole placement with Ackermann's formula:
 - State vector: $\mathbf{x}_f = [\theta, \dot{\theta}]^T$
