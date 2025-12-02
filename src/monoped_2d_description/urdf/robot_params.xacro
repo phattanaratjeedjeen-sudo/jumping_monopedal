@@ -52,7 +52,7 @@
 
     <!-- ============== JOINT DYNAMICS ============== -->
     <!-- TD-SLIP with damping for Phase 2 -->
-    <xacro:property name="spring_damping" value="0.2"/>
+    <xacro:property name="spring_damping" value="0.0"/>
     <xacro:property name="spring_friction" value="0.0"/>
 
     <!-- ============== SPRING PARAMETERS ============== -->

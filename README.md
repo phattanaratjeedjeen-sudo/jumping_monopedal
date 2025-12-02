@@ -240,10 +240,15 @@ will be updated Image diagram soon!
 | Reaction wheel mass (per wheel) | $M_{rw}$ | 0.1 kg |
 | Thigh mass | $M_{thigh}$ | 0.01 kg |
 | Shank mass | $M_{shank}$ | 0.01 kg |
-| Foot mass | $M_{foot}$ | 0.01 kg |
+| Foot mass | $M_{foot}$ | 0.1 kg |
 | Spring stiffness | $k_s$ | 1000 N/m |
-| Spring equilibrium length | $L_0$ | 0.55 m |
-| Reaction wheel damping | $b_{rw}$ | 1.0 N·m·s/rad |
+| Spring equilibrium length | $L_0$ | 0.30 m |
+| Body dimensions | $b_x, b_y, b_z$ | 0.15 × 0.15 × 0.15 m |
+| Thigh length | $l_{thigh}$ | 0.15 m |
+| Shank length | $l_{shank}$ | 0.15 m |
+| Reaction wheel radius | $r_{rw}$ | 0.15 m |
+| Reaction wheel damping | $b_{rw}$ | 0.0 N·m·s/rad |
+| Reaction wheel friction | $f_{rw}$ | 0.0 |
 
 ### Controller Design
 
