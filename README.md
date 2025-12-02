@@ -57,7 +57,54 @@ graph TB
 - **ros_gz_bridge**: Bridges Gazebo topics to ROS2
 
 ### Phase 2: 2-d Monopedal Robot Model With Reaction Wheel (undamped case)
-Comming soon!
+
+```mermaid
+graph TB
+    subgraph Gazebo["Gazebo Simulation"]
+        WORLD[Empty World]
+        ROBOT[2D Monoped Robot]
+        ALT[Altimeter Sensor]
+        IMU[IMU Sensor]
+    end
+
+    subgraph ROS2["ROS2 Control"]
+        RSP[Robot State Publisher]
+        JSB[Joint State Broadcaster]
+        EC[Effort Controller]
+    end
+
+    subgraph Controller["2D Controller Node"]
+        SM[State Machine]
+        ENERGY[Energy Calculator]
+        ATTITUDE[Attitude Controller]
+        SM --> |state| ENERGY
+        SM --> |state| ATTITUDE
+        ENERGY --> |spring effort| CMD[Command Publisher]
+        ATTITUDE --> |wheel torque| CMD
+    end
+
+    subgraph Bridge["ros_gz_bridge"]
+        BRIDGE[Parameter Bridge]
+    end
+
+    RSP --> |/robot_description| ROBOT
+    ROBOT --> ALT
+    ROBOT --> IMU
+    ALT --> |/altimeter_data| BRIDGE
+    IMU --> |/imu_data| BRIDGE
+    BRIDGE --> |/altimeter_data| SM
+    BRIDGE --> |/imu_data| ATTITUDE
+    JSB --> |/joint_states| SM
+    CMD --> |/effort_controller/commands| EC
+    EC --> ROBOT
+```
+
+**Nodes:**
+- **Robot State Publisher**: Publishes robot URDF to `/robot_description`
+- **Joint State Broadcaster**: Publishes joint positions to `/joint_states`
+- **Effort Controller**: Receives effort commands and applies force/torque to joints
+- **2D Controller**: Main control logic with state machine, energy calculation, and attitude control
+- **ros_gz_bridge**: Bridges Gazebo topics (altimeter, IMU) to ROS2
 
 ## Installation
 1. Clone the repository:
