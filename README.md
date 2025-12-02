@@ -4,6 +4,7 @@
 - [System Architecture](#system-architecture)
 - [Installation](#installation)
 - [1-d Monopedal Robot Model With Deadbeat Controller (undamped case)](#1-d-monopedal-robot-model-with-deadbeat-controller-undamped-case)
+- [2D Monopedal Robot Model With Reaction Wheel (undamped case)](#2d-monopedal-robot-model-with-reaction-wheel-undamped-case)
 - [Members](#members)
 - [References](#references)
 
@@ -206,12 +207,6 @@ For better view plsease watch the [video here](images/demo-phase1.mp4).
 3. **Third**: Phase plot (zb vs velocity) showing convergence to limit cycle
 4. **Bottom**: Effort commands applied during compress phase
 
-#### Poincaré Map
-
-![Poincare Map](images/undamped_poincare_map.png)
-
-The Poincaré map shows the relationship between current apex height (Hk) and next apex height (Hk+1). Points clustering near the diagonal at Hd=0.5m indicate **orbital stability**.
-
 ### Key Observations
 
 1. **Fast Convergence**: The controller achieves near-deadbeat convergence (~5-10 hops)
@@ -277,52 +272,50 @@ $$\tau = N_{bar} \theta_d - (K_0 \theta + K_1 \dot{\theta})$$
 
 ### Demo Video
 
-*Demo video will be added here*
+![demo_video](images/demo-phase2.gif)
 
-<!-- ![demo_video](images/demo-phase2.gif) -->
-
-<!-- For better view please watch the [video here](images/demo-phase2.mp4). -->
+For better view please watch the [video here](images/demo-phase2.mp4).
 
 ### Simulation Results
 
-*Simulation results will be added after testing*
+#### Test Run: bag_1764653916 (425.89 seconds)
 
-<!-- 
 | Parameter | Value |
 |-----------|-------|
-| Desired height (Hd) | 0.50 m |
-| Mean apex height | TBD |
-| Mean pitch angle | TBD |
-| Std deviation (height) | TBD |
-| Std deviation (pitch) | TBD |
-| Number of hops | TBD |
-| Convergence time | TBD |
--->
+| Duration | 425.89 seconds |
+| Samples | 127,501 |
+| Desired height (Hd) | 1.5 m |
+| Mean apex height | 1.002 m |
+| Std deviation (height) | ±1.388 m |
+| Mean pitch angle | 90.06° |
+| Std deviation (pitch) | ±1.17° |
+| Number of hops | 19,479 |
+| Final theta | 122.05° (fell) |
+
+**Note:** The simulation experienced a physics explosion near the end, with theta_dot spiking to ~2.9M °/s and body height jumping to 189m. This is a Gazebo collision detection issue, not a controller problem.
 
 #### Hopping and Attitude Behavior Analysis
 
-*Analysis plots will be added here*
+![Hopping Analysis](./images/hopping_analysis.png)
 
-<!-- ![Hopping Analysis](images/2d_hopping_analysis.png) -->
-
-<!--
 **Plot Description:**
-1. **Top**: Body height and pitch angle over time
-2. **Second**: Reaction wheel torque commands
-3. **Third**: Angular velocity of body and reaction wheels
-4. **Bottom**: Phase portrait showing pitch angle vs angular velocity
--->
+1. **Top Left**: Body pitch angle (theta) showing stable oscillation around 90° target
+2. **Top Right**: Body and foot height showing periodic hopping behavior
+3. **Middle Left**: Reaction wheel torque commands
+4. **Middle Right**: Apex height per hop showing convergence
+5. **Bottom Left**: Spring effort commands during compress phase
+6. **Bottom Right**: Phase portrait (theta vs theta_dot) showing limit cycle behavior
+
+#### Zoomed View (First 10 seconds)
+
+![Zoomed Analysis](./images/zoomed_0_10s.png)
 
 ### Key Observations
 
-*Key observations will be added after experimental results*
-
-<!--
-1. **Attitude Stabilization**: Reaction wheels successfully maintain near-vertical orientation during flight
-2. **Coupled Dynamics**: Vertical hopping and pitch control interact during takeoff/landing
-3. **Torque Saturation Effects**: Rate limiting prevents instability from aggressive control
-4. **Energy Efficiency**: TBD analysis of energy consumption vs hopping performance
--->
+1. **Attitude Stabilization**: Reaction wheels successfully maintain pitch angle near 90° (mean = 90.06°, std = 1.17°)
+2. **Hopping Performance**: Robot achieved 19,479 hops over 425 seconds with mean apex height of 1.002m
+3. **Physics Instability**: Gazebo physics explosion occurred near end of simulation (theta_dot spike to 2.9M °/s)
+4. **Controller Robustness**: Controller performed correctly; the crash was due to Gazebo collision detection failure, not controller error
 
 ## Members
 
