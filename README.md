@@ -287,7 +287,7 @@ For better view plsease watch the [video here](images/demo-phase1.mp4).
 
 This implementation is based on the **Torque Driven Spring Loaded Inverted Pendulum (TD-SLIP)** model described in [[2]](#references). Or You can read the full report [here](./2407.12120%202.pdf).
 
-By this phase are develop base from Phase 1 [1D Monopedal Robot Model With Deadbeat Controller (undamped case)](#1d-monopedal-robot-model-with-deadbeat-controller-undamped-case).
+This phase is developed based on Phase 1 [1D Monopedal Robot Model With Deadbeat Controller (undamped case)](#1d-monopedal-robot-model-with-deadbeat-controller-undamped-case).
 
 ### Usage
 To run the 2D monopedal robot simulation with the reaction wheel controller, use the following command:
@@ -296,10 +296,45 @@ To run the 2D monopedal robot simulation with the reaction wheel controller, use
 ros2 launch monoped_2d_description sim.launch.py
 ```
 
-
 ### Model Description
 
 ![2D Model Diagram](images/model_phase2.png)
+
+The 2D monopedal robot extends the 1D vertical hopper with planar motion and attitude control via reaction wheels. The system dynamics are governed by coupled angular and radial motion equations.
+
+#### Coordinate Definitions
+
+| Symbol | Unit | Description | Value/Formula |
+|--------|------|-------------|---------------|
+| $\theta$ | deg | Robot pitch angle reference from ground | $\theta = 90° - \text{angle from IMU}$ |
+| $\ell$ | m | Leg length (radial distance) | Variable (measured) |
+| $\ell_0$ | m | Operating leg length | 0.30 m |
+
+#### Hopping Cycle Illustration
+
+<p align="center">
+  <img src="images/image.png" alt="2D Hopping Cycle" width="600">
+</p>
+
+The figure above illustrates the complete hopping cycle showing both stance and flight phases, with reaction wheels providing attitude control throughout the motion.
+
+#### Dynamics Equations
+
+**Stance Phase:**
+
+The robot dynamics during ground contact are governed by:
+
+$$\ddot{\theta} = -\frac{2\dot{\zeta}\dot{\theta}}{\zeta} - \frac{g\cos(\theta)}{\zeta} + \frac{\tau}{m\zeta^2}$$
+
+$$\ddot{\zeta} = \zeta\dot{\theta}^2 - g\sin(\theta) - \frac{k_0}{m}(\zeta - \ell_0) - \frac{b_\ell}{m}\dot{\zeta}$$
+
+**Flight Phase:**
+
+During flight, only the reaction wheel provides control authority:
+
+$$\tau = I_{robot} \cdot \ddot{\theta}$$
+
+Where $I_{robot}$ is the robot's moment of inertia about the center of mass.
 
 #### TF Tree (URDF Structure)
 
@@ -311,44 +346,87 @@ ros2 launch monoped_2d_description sim.launch.py
 
 | Parameter | Symbol | Value |
 |-----------|--------|-------|
-| Body mass | $M_b$ | 0.5 kg |
+| Body mass | $m$ | 0.5 kg |
 | Reaction wheel mass (per wheel) | $M_{rw}$ | 0.1 kg |
 | Thigh mass | $M_{thigh}$ | 0.01 kg |
 | Shank mass | $M_{shank}$ | 0.01 kg |
 | Foot mass | $M_{foot}$ | 0.1 kg |
-| Spring stiffness | $k_s$ | 1000 N/m |
-| Spring equilibrium length | $L_0$ | 0.30 m |
-| Body dimensions | $b_x, b_y, b_z$ | 0.15 × 0.15 × 0.15 m |
-| Thigh length | $l_{thigh}$ | 0.15 m |
-| Shank length | $l_{shank}$ | 0.15 m |
+| Spring stiffness | $k_0$ | 1000 N/m |
+| Leg damping | $b_\ell$ | 0.2 N·s/m |
+| Spring equilibrium length | $\ell_0$ | 0.30 m |
+| Gravity acceleration | $g$ | 9.81 m/s² |
+| Body dimensions | $b_x \times b_y \times b_z$ | 0.15 × 0.15 × 0.15 m |
+| Thigh length | $\ell_{thigh}$ | 0.15 m |
+| Shank length | $\ell_{shank}$ | 0.15 m |
 | Reaction wheel radius | $r_{rw}$ | 0.15 m |
 | Reaction wheel damping | $b_{rw}$ | 0.0 N·m·s/rad |
 | Reaction wheel friction | $f_{rw}$ | 0.0 |
 
+### Hybrid Domain Cycle
+
+The 2D hopping motion follows a hybrid cycle similar to Phase 1:
+
+| Domain | Description | Transition |
+|--------|-------------|------------|
+| **Flight** | Combination of air + compress domain from 1D model; robot in free fall with reaction wheel control | $z_f \leq 0$ → Ground |
+| **Ground** | Foot in contact with ground; spring compression/extension + attitude control | Takeoff → Flight |
+
 ### Controller Design
 
-The 2D controller combines vertical hopping control with pitch stabilization using reaction wheels:
+The 2D controller combines vertical hopping control with pitch stabilization using state-feedback control.
 
-#### Vertical Control (TD-SLIP)
-Similar to Phase 1, uses deadbeat control for hop height regulation with state-dependent spring force.
+#### Vertical Control (Energy-Based Deadbeat)
+The vertical hopping controller uses the same energy-based deadbeat approach from Phase 1 to regulate apex height through spring compression control.
 
-#### Pitch Stabilization (Reaction Wheel)
-Uses a state-feedback controller with torque saturation and rate limiting:
+#### Pitch Stabilization (State-Feedback Control)
 
-$$\tau = N_{bar} \theta_d - (K_0 \theta + K_1 \dot{\theta})$$
+**Linearization:**
+The stance phase dynamics are linearized around an operating point to design an LQR controller.
+
+**State Vector:** $\mathbf{x} = [\theta, \dot{\theta}, \ell, \dot{\ell}]^T$
+
+**Operating Point:**
+- Torque: $\tau = 0$ Nm
+- Leg length: $\ell = 0.3$ m
+- Leg velocity: $\dot{\ell} = 0$ m/s
+- Pitch angle: $\theta = \pi/2$ rad (90°, upright)
+- Angular velocity: $\dot{\theta} = 0$ rad/s
+
+The linearized system takes the form:
+
+$$\dot{\mathbf{x}} = A\mathbf{x} + B\tau$$
+
+Where $A$ and $B$ are obtained by linearizing the stance phase dynamics equations.
+
+**LQR Design:**
+State-feedback gains are computed using MATLAB's `lqr` function with:
+- State weighting matrix: $Q = \text{diag}([100, 0, 0, 0])$ (prioritize angle control)
+- Control weighting: $R = 1$
+
+This yields the stance phase gain: $K_g = [11.5792, 1.0208, 0.0000, 0.0000]$
+
+**Command Feedforward:**
+The feedforward gain $N_g$ is computed using the `rscale` function and tuned to $N_g = 11.6$.
+
+**Control Law:**
+
+$$\tau = N_g \theta_d - K_g (\mathbf{x} - \mathbf{x}_d)$$
+
+Where $\theta_d$ is the desired pitch angle (90°).
 
 **Saturation Constraints:**
 - Maximum torque: $|\tau| \leq 2.5$ Nm
 - Torque rate limit: $|\dot{\tau}| \leq 10$ Nm/s
 
 **Control Gains:**
-- Ground phase: $K_g = [2.895, 0.257]$, $N_g = 2.9$
-- Flight phase: $K_f = [14.068, 0.5625]$, $N_f = 14.068$
+- Ground phase: $K_g = [11.58, 1.02, 0.0, 0.0]$, $N_g = 11.6$
+- Flight phase: $K_f = [14.068, 0.5625]$, $N_f = 14.068$ (only $\theta$ and $\dot{\theta}$ states)
 
 **Stability Mechanisms:**
 1. **Torque Saturation**: Prevents excessive control effort
 2. **Rate Limiting**: Smooths torque commands to prevent oscillations
 3. **Joint Damping**: Passive damping (1.0 N·m·s/rad) reduces wheel overshoot
+4. **State-Dependent Gains**: Different gains for ground vs. flight phases account for changing dynamics
 
 ### Demo Video
 
