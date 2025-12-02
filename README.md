@@ -343,8 +343,6 @@ For better view please watch the [video here](images/demo-phase2.mp4).
 
 ### Simulation Results
 
-#### Test Run: bag_1764653916 (425.89 seconds)
-
 | Parameter | Value |
 |-----------|-------|
 | Duration | 425.89 seconds |
@@ -357,7 +355,6 @@ For better view please watch the [video here](images/demo-phase2.mp4).
 | Number of hops | 19,479 |
 | Final theta | 122.05° (fell) |
 
-**Note:** The simulation experienced a physics explosion near the end, with theta_dot spiking to ~2.9M °/s and body height jumping to 189m. This is a Gazebo collision detection issue, not a controller problem.
 
 #### Hopping and Attitude Behavior Analysis
 
