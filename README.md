@@ -3,14 +3,14 @@
 ## Table of Contents
 - [System Architecture](#system-architecture)
 - [Installation](#installation)
-- [1-d Monopedal Robot Model With Deadbeat Controller (undamped case)](#1-d-monopedal-robot-model-with-deadbeat-controller-undamped-case)
+- [1D Monopedal Robot Model With Deadbeat Controller (undamped case)](#1d-monopedal-robot-model-with-deadbeat-controller-undamped-case)
 - [2D Monopedal Robot Model With Reaction Wheel (undamped case)](#2d-monopedal-robot-model-with-reaction-wheel-undamped-case)
 - [Members](#members)
 - [References](#references)
 
 ## System Architecture
 
-### Phase 1: 1-d Monopedal Robot Model With Deadbeat Controller (undamped case)
+### Phase 1: 1D Monopedal Robot Model With Deadbeat Controller (undamped case)
 
 ```mermaid
 graph TB
@@ -56,7 +56,7 @@ graph TB
 - **Deadbeat Controller**: Main control logic with state machine and energy calculation
 - **ros_gz_bridge**: Bridges Gazebo topics to ROS2
 
-### Phase 2: 2-d Monopedal Robot Model With Reaction Wheel (undamped case)
+### Phase 2: 2D Monopedal Robot Model With Reaction Wheel (undamped case)
 
 ```mermaid
 graph TB
@@ -142,11 +142,19 @@ source install/setup.bash
 
 
 
-## 1-d Monopedal Robot Model With Deadbeat Controller (undamped case)
+## 1D Monopedal Robot Model With Deadbeat Controller (undamped case)
 
 This implementation is based on the **Compress-Release Hopper (CRH)** model described in [[1]](#references).
 
 Or You can read the full report [here](./Ambrose%20et%20al.%20-%202019%20-%20Design%20and%20Comparative%20Analysis%20of%201D%20Hopping%20Robots.pdf).
+
+
+### Usage
+To run the 1D monopedal robot simulation with the deadbeat controller, use the following command:
+
+```bash
+ros2 launch monoped_description sim.launch.py
+```
 
 
 ### Model Description
@@ -264,8 +272,14 @@ For better view plsease watch the [video here](images/demo-phase1.mp4).
 
 This implementation is based on the **Torque Driven Spring Loaded Inverted Pendulum (TD-SLIP)** model described in [[2]](#references). Or You can read the full report [here](./2407.12120%202.pdf).
 
-By this phase are develop base from Phase 1 [1-d Monopedal Robot Model With Deadbeat Controller (undamped case)](#1-d-monopedal-robot-model-with-deadbeat-controller-undamped-case).
+By this phase are develop base from Phase 1 [1D Monopedal Robot Model With Deadbeat Controller (undamped case)](#1d-monopedal-robot-model-with-deadbeat-controller-undamped-case).
 
+### Usage
+To run the 2D monopedal robot simulation with the reaction wheel controller, use the following command:
+
+```bash
+ros2 launch monoped_2d_description sim.launch.py
+```
 
 
 ### Model Description
