@@ -223,8 +223,7 @@ By this phase are develop base from Phase 1 [1-d Monopedal Robot Model With Dead
 
 ### Model Description
 
-will be updated Image diagram soon!
-<!-- ![2D Model Diagram](images/2d_model.png) -->
+![2D Model Diagram](images/model_phase2.png)
 
 #### TF Tree (URDF Structure)
 
@@ -301,7 +300,7 @@ For better view please watch the [video here](images/demo-phase2.mp4).
 
 #### Hopping and Attitude Behavior Analysis
 
-![Hopping Analysis](./images/hopping_analysis.png)
+![Hopping Analysis](images/hopping_analysis.png)
 
 **Plot Description:**
 1. **Top Left**: Body pitch angle (theta) showing stable oscillation around 90° target
@@ -313,7 +312,7 @@ For better view please watch the [video here](images/demo-phase2.mp4).
 
 #### Zoomed View (First 10 seconds)
 
-![Zoomed Analysis](./images/zoomed_0_10s.png)
+![Zoomed Analysis](images/zoomed_0_10s.png)
 
 ### Key Observations
 
