@@ -48,7 +48,7 @@
     <xacro:property name="mass_body" value="0.5"/>
     <xacro:property name="mass_thigh" value="0.01"/>
     <xacro:property name="mass_shank" value="0.01"/>
-    <xacro:property name="mass_foot" value="0.1"/>
+    <xacro:property name="mass_foot" value="0.08"/>
 
     <!-- ============== JOINT DYNAMICS ============== -->
     <!-- TD-SLIP with damping for Phase 2 -->
@@ -66,13 +66,13 @@
     <xacro:property name="spring_lower_limit" value="0.0"/>
     <xacro:property name="spring_upper_limit" value="0.1"/>
     <xacro:property name="spring_effort_limit" value="1000"/>
-    <xacro:property name="spring_velocity_limit" value="1000"/>
+    <xacro:property name="spring_velocity_limit" value="10"/>
 
     <!-- ============== REACTION WHEEL JOINT ============== -->
     <!-- Continuous rotation for reaction wheels -->
     <xacro:property name="rw_damping" value="0.0"/>
     <xacro:property name="rw_friction" value="0.0"/>
-    <xacro:property name="rw_effort_limit" value="100"/>
-    <xacro:property name="rw_velocity_limit" value="100000"/>
+    <xacro:property name="rw_effort_limit" value="10"/>
+    <xacro:property name="rw_velocity_limit" value="3000"/>
 
 </robot>

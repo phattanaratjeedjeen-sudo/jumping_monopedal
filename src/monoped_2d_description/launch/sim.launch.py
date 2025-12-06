@@ -112,7 +112,7 @@ def generate_launch_description():
 
     twoD_controller = Node(
         package=controller_package_name,
-        executable='twoD.py',
+        executable='twoD_copy.py',
         name='twoD_controller',
     )
 
@@ -157,14 +157,14 @@ def generate_launch_description():
         )
     )
 
-    launch_description.add_action(
-        RegisterEventHandler(
-            event_handler=OnProcessExit(
-                target_action=effort_spawner,
-                on_exit=[bag],
-            )
-        )
-    )
+    # launch_description.add_action(
+    #     RegisterEventHandler(
+    #         event_handler=OnProcessExit(
+    #             target_action=effort_spawner,
+    #             on_exit=[bag],
+    #         )
+    #     )
+    # )
 
 
     # Add launch actions

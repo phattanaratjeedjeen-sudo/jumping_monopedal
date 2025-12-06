@@ -53,8 +53,8 @@ class TwoDController(Node):
         self.last_effort = 0.0
         self.Kg = [11.5792, 1.028]  
         self.Kf = [56.2725/2, 2.25/2]  
-        self.Nf = 56.2725/2
-        self.Ng = 11.6     
+        self.Ng = 11.6
+        self.Nf = 56.2725/2     
         
         # Torque saturation and rate limiting parameters
         self.max_torque = 5.0  # maximum torque limit (Nm) - adjust based on your motor specs
@@ -82,9 +82,9 @@ class TwoDController(Node):
         q = msg.orientation
         quaternion = [q.x, q.y, q.z, q.w]
         roll, pitch, yaw = euler_from_quaternion(quaternion)
-        self.theta = 90 - pitch * 180.0 / math.pi
+        self.theta = 90 - math.degrees(pitch)
         omega_y_rad = msg.angular_velocity.y
-        self.theta_dot = -omega_y_rad * 180.0 / math.pi
+        self.theta_dot = -math.degrees(omega_y_rad)
         
         # Clamp theta_dot to reject impossible values (prevents torque explosion)
         # if abs(raw_theta_dot) > self.max_theta_dot:

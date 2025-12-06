@@ -50,7 +50,7 @@ class DeadBeatController(Node):
         self.zb_dot = 0.0      # body velocity (m/s)
         self.Hk = None          # actual height of current hop (m)
         self.Hc = 0.0          # value given to controller as apex height of current hop (m)
-        self.Hd = 0.6          # desired height to reach at apex of next hop (m)
+        self.Hd = 0.7        # desired height to reach at apex of next hop (m)
         self.Ls = self.l0
         self.g = 9.81          # gravity acc (m/s^2)
         self.ks = 1000         # spring stiffness (N/m)

@@ -32,7 +32,7 @@
     <xacro:property name="mass_body" value="1.0"/>
     <xacro:property name="mass_upper_leg" value="0.001"/>
     <xacro:property name="mass_lower_leg" value="0.001"/>
-    <xacro:property name="mass_foot" value="0.08"/>
+    <xacro:property name="mass_foot" value="0.1"/>
 
     <!-- assume no damping and friction for ideal case -->
     <xacro:property name="joint_damping" value="0.0"/>
