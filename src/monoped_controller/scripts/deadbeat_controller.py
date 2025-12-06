@@ -9,6 +9,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray
 from ros_gz_interfaces.msg import Altimeter
+from monoped_interfaces.msg import DebugDeadbeat
 import xml.etree.ElementTree as ET
 from math import sqrt
 import numpy as np
@@ -21,7 +22,7 @@ class DeadBeatController(Node):
         self.create_subscription(Altimeter, '/altimeter_data', self.altimeter_callback, 10)
         self.effort_publisher = self.create_publisher(Float64MultiArray, '/effort_controller/commands', 10)
         # Single debug topic carrying combined state for easier plotting/logging
-        self.debug_state_publisher = self.create_publisher(Float64MultiArray, '/debug_state', 10)
+        self.debug_state_publisher = self.create_publisher(DebugDeadbeat, '/debug_deadbeat', 10)
 
         tree_path = os.path.join(get_package_share_directory('monoped_description'), "urdf", "robot_params.xacro")
         tree = ET.parse(tree_path)
@@ -68,24 +69,24 @@ class DeadBeatController(Node):
     def publish_debug_state(self, effort=None):
         """
         Publish combined debug data on one topic to simplify logging/plotting.
-        Data layout: [zb, zb_dot, zf, Hk, Hc, Hd, u, effort, state_code]
+        Uses custom DebugDeadbeat message interface.
         state_code: air=0, compress=1, touchdown=2, rebound=3, unknown=-1
         """
         hk_val = self.Hk if self.Hk is not None else float('nan')
         effort_val = effort if effort is not None else self.u
-        state_code = {'air': 0.0, 'compress': 1.0, 'touchdown': 2.0, 'rebound': 3.0}.get(self.state, -1.0)
-        msg = Float64MultiArray()
-        msg.data = [
-            self.zb,
-            self.zb_dot,
-            self.zf,
-            hk_val,
-            self.Hc,
-            self.Hd,
-            self.u,
-            effort_val,
-            state_code,
-        ]
+        state_code = {'air': 0, 'compress': 1, 'touchdown': 2, 'rebound': 3}.get(self.state, -1)
+        
+        msg = DebugDeadbeat()
+        msg.zb = self.zb
+        msg.zb_dot = self.zb_dot
+        msg.zf = self.zf
+        msg.hk = hk_val
+        msg.hc = self.Hc
+        msg.hd = self.Hd
+        msg.u = self.u
+        msg.effort = effort_val
+        msg.state_code = state_code
+        
         self.debug_state_publisher.publish(msg)
 
     def pub_effort(self, effort):

@@ -9,6 +9,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import JointState, Imu
 from std_msgs.msg import Float64MultiArray
 from ros_gz_interfaces.msg import Altimeter
+from monoped_interfaces.msg import Debug2D
 import xml.etree.ElementTree as ET
 from math import sqrt
 import numpy as np
@@ -23,7 +24,7 @@ class TwoDController(Node):
         self.create_subscription(Imu, '/imu_data', self.imu_callback, 10)
         self.effort_publisher = self.create_publisher(Float64MultiArray, '/effort_controller/commands', 10)
         # Single debug topic carrying combined state for easier plotting/logging
-        self.debug_state_publisher = self.create_publisher(Float64MultiArray, '/debug_state', 10)
+        self.debug_state_publisher = self.create_publisher(Debug2D, '/debug_2d', 10)
 
         # Mass parameters [kg]
         self.mass_body = 0.5
@@ -110,19 +111,18 @@ class TwoDController(Node):
     def publish_debug_state(self, effort=None):
         """
         Publish combined debug data on one topic to simplify logging/plotting.
-        Data layout: [zb, zb_dot, zf, Hk, Hc, Hd, u, effort, state_code]
-        state_code: air=0, compress=1, touchdown=2, rebound=3, unknown=-1
+        Uses custom Debug2D message interface.
         """
         effort_val = effort if effort is not None else self.u
-        msg = Float64MultiArray()
-        msg.data = [
-            self.zb,
-            self.zf,
-            effort_val,
-            self.theta,
-            self.theta_dot,
-            self.torque
-        ]
+        
+        msg = Debug2D()
+        msg.zb = self.zb
+        msg.zf = self.zf
+        msg.effort = effort_val
+        msg.theta = self.theta
+        msg.theta_dot = self.theta_dot
+        msg.torque = self.torque
+        
         self.debug_state_publisher.publish(msg)
 
     def altimeter_callback(self, msg: Altimeter):
