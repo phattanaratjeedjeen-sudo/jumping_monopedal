@@ -16,15 +16,16 @@ import sqlite3
 import numpy as np
 import matplotlib.pyplot as plt
 from rclpy.serialization import deserialize_message
-from std_msgs.msg import Float64MultiArray
+from monoped_interfaces.msg import DebugDeadbeat
 
 
 def extract_debug_state(bag_path: str) -> dict:
     """
-    Extract /debug_state topic data from bag file.
+    Extract /debug_deadbeat topic data from bag file.
 
-    Data layout: [zb, zb_dot, zf, Hk, Hc, Hd, u, effort, state_code]
-    state_code: air=0, compress=1, touchdown=2, rebound=3
+    Uses DebugDeadbeat message type with fields:
+    zb, zb_dot, zf, hk, hc, hd, u, effort, state_code
+    state_code: air=0, compress=1, touchdown=2, rebound=3, unknown=-1
     """
     db_files = [f for f in os.listdir(bag_path) if f.endswith('.db3')]
     if not db_files:
@@ -36,14 +37,14 @@ def extract_debug_state(bag_path: str) -> dict:
 
     cursor.execute("""
         SELECT timestamp, data FROM messages
-        WHERE topic_id = (SELECT id FROM topics WHERE name = '/debug_state')
+        WHERE topic_id = (SELECT id FROM topics WHERE name = '/debug_deadbeat')
         ORDER BY timestamp
     """)
     rows = cursor.fetchall()
     conn.close()
 
     if not rows:
-        raise ValueError("No /debug_state messages found in bag file")
+        raise ValueError("No /debug_deadbeat messages found in bag file")
 
     timestamps = []
     zb_list, zb_dot_list, zf_list = [], [], []
@@ -51,18 +52,17 @@ def extract_debug_state(bag_path: str) -> dict:
     u_list, effort_list, state_list = [], [], []
 
     for ts, data in rows:
-        msg = deserialize_message(data, Float64MultiArray)
-        if len(msg.data) >= 9:
-            timestamps.append(ts / 1e9)
-            zb_list.append(msg.data[0])
-            zb_dot_list.append(msg.data[1])
-            zf_list.append(msg.data[2])
-            Hk_list.append(msg.data[3])
-            Hc_list.append(msg.data[4])
-            Hd_list.append(msg.data[5])
-            u_list.append(msg.data[6])
-            effort_list.append(msg.data[7])
-            state_list.append(msg.data[8])
+        msg = deserialize_message(data, DebugDeadbeat)
+        timestamps.append(ts / 1e9)
+        zb_list.append(msg.zb)
+        zb_dot_list.append(msg.zb_dot)
+        zf_list.append(msg.zf)
+        Hk_list.append(msg.hk)
+        Hc_list.append(msg.hc)
+        Hd_list.append(msg.hd)
+        u_list.append(msg.u)
+        effort_list.append(msg.effort)
+        state_list.append(msg.state_code)
 
     t = np.array(timestamps)
     t = t - t[0]  # Start from 0
@@ -82,17 +82,29 @@ def extract_debug_state(bag_path: str) -> dict:
 
 
 def find_apex_heights(zb: np.ndarray, zb_dot: np.ndarray, t: np.ndarray,
-                      threshold: float = 0.01) -> tuple:
+                      Hk: np.ndarray = None, threshold: float = 0.01) -> tuple:
     """
-    Find apex heights where velocity crosses zero from positive to negative.
+    Find apex heights from Hk data (preferred) or by detecting velocity zero crossings.
+
+    If Hk data is provided, extract apex heights from transitions where Hk becomes valid.
+    Otherwise, fall back to velocity-based detection.
     """
     apex_heights = []
     apex_times = []
 
-    for i in range(1, len(zb_dot)):
-        if zb_dot[i-1] > threshold and zb_dot[i] <= threshold:
-            apex_heights.append(zb[i])
-            apex_times.append(t[i])
+    if Hk is not None:
+        # Extract apex heights from Hk transitions (NaN -> valid value only)
+        # Only count when Hk goes from NaN to a valid value (new apex detected)
+        for i in range(1, len(Hk)):
+            if np.isnan(Hk[i-1]) and not np.isnan(Hk[i]):
+                apex_heights.append(Hk[i])
+                apex_times.append(t[i])
+    else:
+        # Fallback to velocity-based detection
+        for i in range(1, len(zb_dot)):
+            if zb_dot[i-1] > threshold and zb_dot[i] <= threshold:
+                apex_heights.append(zb[i])
+                apex_times.append(t[i])
 
     return np.array(apex_heights), np.array(apex_times)
 
@@ -239,9 +251,9 @@ def main():
     # Extract data
     data = extract_debug_state(bag_path)
 
-    # Find apex heights
+    # Find apex heights using Hk data from controller
     apex_heights, apex_times = find_apex_heights(
-        data['zb'], data['zb_dot'], data['t']
+        data['zb'], data['zb_dot'], data['t'], Hk=data['Hk']
     )
 
     # Print statistics

@@ -109,9 +109,14 @@ class DeadBeatController(Node):
     def state_manager(self):
         if self.state == 'air':
             # detect apex: previous vel > 0 and current vel <= 0
-            if self.zb_dot_prev > 0.0 and self.zb_dot <= 0.0:
-                self.Hk = self.zb  # apex hop height
-                self.publish_debug_state()
+            # Use small threshold to avoid noise triggering false apex
+            apex_threshold = 0.01  # 0.01 m/s
+            if self.zb_dot_prev > apex_threshold and self.zb_dot <= apex_threshold:
+                # Only update Hk if it's a new apex (not already set)
+                if self.Hk is None:
+                    self.Hk = self.zb  # apex hop height
+                    self.get_logger().info(f"Apex detected: Hk = {self.Hk:.4f} m")
+                    self.publish_debug_state()
                 if self.air_state_timer is None:
                     self.air_state_timer = self.create_timer(
                         self.air_delay,

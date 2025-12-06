@@ -4,28 +4,18 @@
 import sys
 import os
 import sqlite3
-import struct
 import numpy as np
 import matplotlib.pyplot as plt
-
-
-def parse_float64_multiarray(data):
-    """Parse std_msgs/Float64MultiArray from raw bytes."""
-    try:
-        # For this bag format, data starts at offset 20
-        if len(data) >= 68:
-            values = struct.unpack_from('<6d', data, 20)
-            return list(values)
-        return None
-    except:
-        return None
+from rclpy.serialization import deserialize_message
+from monoped_interfaces.msg import Debug2D
 
 
 def extract_debug_state(bag_path: str) -> dict:
     """
-    Extract /debug_state topic data from bag file.
+    Extract /debug_2d topic data from bag file.
 
-    Data layout for 2D monoped: [zb, zf, effort, theta, theta_dot, torque]
+    Uses Debug2D message type with fields:
+    zb, zf, effort, theta, theta_dot, torque
     """
     db_files = [f for f in os.listdir(bag_path) if f.endswith('.db3')]
     if not db_files:
@@ -35,38 +25,30 @@ def extract_debug_state(bag_path: str) -> dict:
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    # Get topic id for /debug_state
-    cursor.execute("SELECT id FROM topics WHERE name = '/debug_state'")
-    result = cursor.fetchone()
-    if not result:
-        raise ValueError("No /debug_state topic found in bag file")
-    topic_id = result[0]
-
     cursor.execute("""
         SELECT timestamp, data FROM messages
-        WHERE topic_id = ?
+        WHERE topic_id = (SELECT id FROM topics WHERE name = '/debug_2d')
         ORDER BY timestamp
-    """, (topic_id,))
+    """)
     rows = cursor.fetchall()
     conn.close()
 
     if not rows:
-        raise ValueError("No /debug_state messages found in bag file")
+        raise ValueError("No /debug_2d messages found in bag file")
 
     timestamps = []
     zb_list, zf_list, effort_list = [], [], []
     theta_list, theta_dot_list, torque_list = [], [], []
 
     for ts, data in rows:
-        parsed = parse_float64_multiarray(data)
-        if parsed and len(parsed) >= 6:
-            timestamps.append(ts / 1e9)
-            zb_list.append(parsed[0])
-            zf_list.append(parsed[1])
-            effort_list.append(parsed[2])
-            theta_list.append(parsed[3])
-            theta_dot_list.append(parsed[4])
-            torque_list.append(parsed[5])
+        msg = deserialize_message(data, Debug2D)
+        timestamps.append(ts / 1e9)
+        zb_list.append(msg.zb)
+        zf_list.append(msg.zf)
+        effort_list.append(msg.effort)
+        theta_list.append(msg.theta)
+        theta_dot_list.append(msg.theta_dot)
+        torque_list.append(msg.torque)
 
     t = np.array(timestamps)
     t = t - t[0]  # Start from 0
