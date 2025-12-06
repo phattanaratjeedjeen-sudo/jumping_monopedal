@@ -255,7 +255,7 @@ $$
 
 ![demo_video](images/demo-phase1.gif)
 
-For better view plsease watch the [video here](images/demo-phase1.mp4).
+For better view please watch the [video here](images/demo-phase1.mp4).
 
 ### Simulation Results
 
