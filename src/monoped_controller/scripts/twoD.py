@@ -50,7 +50,7 @@ class TwoDController(Node):
         self.zb_dot_prev = 0.0
         self.u = 0.0
         self.effort_command = 0.0
-
+        self.last_effort = 0.0
         self.Kg = [11.5792, 1.028]  
         self.Kf = [56.2725/2, 2.25/2]  
         self.Nf = 56.2725/2
@@ -113,7 +113,7 @@ class TwoDController(Node):
         Publish combined debug data on one topic to simplify logging/plotting.
         Uses custom Debug2D message interface.
         """
-        effort_val = effort if effort is not None else self.u
+        effort_val = effort if effort is not None else self.last_effort
         
         msg = Debug2D()
         msg.zb = self.zb
@@ -160,7 +160,6 @@ class TwoDController(Node):
                     )
         elif self.state == 'compress' and self.zf <= 0.00001:
             self.state = 'touchdown'
-            self.command_pub()
 
         elif self.state == 'touchdown' and self.zb_dot > 0:
             self.state = 'rebound'
@@ -168,6 +167,7 @@ class TwoDController(Node):
         
         elif self.state == 'rebound' and self.zf > 0:
             self.state = 'air'
+            self.Hk = None
     
 
     def air_to_compress_callback(self):
@@ -265,6 +265,7 @@ class TwoDController(Node):
         #     )
 
     def pub_effort(self, force, torque):
+        self.last_effort = force
         msg = Float64MultiArray()
         msg.data = [force, torque*0.5, -torque*0.5]  # [thigh_to_shank, body_to_rw_left, body_to_rw_right]
         self.effort_publisher.publish(msg)

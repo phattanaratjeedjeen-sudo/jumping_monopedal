@@ -62,6 +62,7 @@ class DeadBeatController(Node):
         self.measurement_noise_std = 0.01  # e.g. 1 cm noise
         self.zb_dot_prev = 0.0
         self.u = 0.0
+        self.last_effort = 0.0
 
         self.create_timer(0.01, self.timer_callback)
 
@@ -73,7 +74,7 @@ class DeadBeatController(Node):
         state_code: air=0, compress=1, touchdown=2, rebound=3, unknown=-1
         """
         hk_val = self.Hk if self.Hk is not None else float('nan')
-        effort_val = effort if effort is not None else self.u
+        effort_val = effort if effort is not None else self.last_effort
         state_code = {'air': 0, 'compress': 1, 'touchdown': 2, 'rebound': 3}.get(self.state, -1)
         
         msg = DebugDeadbeat()
@@ -90,6 +91,7 @@ class DeadBeatController(Node):
         self.debug_state_publisher.publish(msg)
 
     def pub_effort(self, effort):
+        self.last_effort = effort
         msg = Float64MultiArray()
         msg.data = [effort]
         self.effort_publisher.publish(msg)
@@ -124,6 +126,7 @@ class DeadBeatController(Node):
         
         elif self.state == 'rebound' and self.zf > 0:
             self.state = 'air'
+            self.Hk = None
     
 
     def air_to_compress_callback(self):
@@ -145,7 +148,6 @@ class DeadBeatController(Node):
 
 
     def command_pub(self):
-        msg = Float64MultiArray()
         if self.state == 'compress':
             if self.Hk is None:
                 self.get_logger().warn("Hk is None, skip compress command")
@@ -169,9 +171,7 @@ class DeadBeatController(Node):
             
         elif self.state == 'rebound':
             # become free joint
-            msg.data = [0.0]
             self.pub_effort(0.0)
-            self.publish_debug_state(0.0)
 
 
 def main(args=None):

@@ -165,7 +165,7 @@ def generate_launch_description():
     launch_description.add_action(rsp)
     launch_description.add_action(spawn_entity)
     launch_description.add_action(bridge)
-    # launch_description.add_action(deadbeat_controller)
+    launch_description.add_action(deadbeat_controller)
 
 
     return launch_description
