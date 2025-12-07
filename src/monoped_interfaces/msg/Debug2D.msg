@@ -7,5 +7,6 @@ float64 force           # force command (N)
 float64 theta           # body pitch angle (deg)
 float64 theta_dot       # body angular velocity (deg/s)
 float64 torque          # torque command (Nm)
-float64 u
+float64 u               
+float64 hd              # desired apex height (m)
 int64 hop               # hop (times)  

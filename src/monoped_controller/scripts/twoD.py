@@ -70,7 +70,7 @@ class TwoDController(Node):
         self.theta_dot = -math.degrees(omega_y_rad)
         
 
-    def publish_debug_state(self, ):
+    def publish_debug_state(self):
         msg = Debug2D()
         msg.zb = self.zb
         msg.zf = self.zf

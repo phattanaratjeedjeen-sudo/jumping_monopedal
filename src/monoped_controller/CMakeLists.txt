@@ -29,7 +29,6 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   scripts/dummy_script.py
   scripts/twoD.py
-  scripts/twoD_copy.py
   scripts/deadbeat_controller.py
   DESTINATION lib/${PROJECT_NAME}
 )
