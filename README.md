@@ -407,8 +407,8 @@ which makes
 
 This yields the stance phase gain: $K_g = [17.94, 1.26, 0, 0.0]$
 
-**Command Feedforward:**
-The feedforward gain $N_g$ is computed using the `rscale` function and tuned to $N_g = 16.45$ but after tuning $N_g = 17.49$ is used 
+**Compenstate Gain:**
+The compensate gain $N_g$ is computed using the `rscale` function and tuned to $N_g = 16.45$ but after tuning $N_g = 17.49$ is used 
 
 **MATLAB Implementation:**
 The controller gains are computed offline using MATLAB. The implementation can be found in the [matlab](matlab/) directory:
