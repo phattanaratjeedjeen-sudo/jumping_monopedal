@@ -64,29 +64,7 @@ def extract_debug_state(bag_path: str) -> dict:
     }
 
 
-def compute_zb_dot(zb: np.ndarray, t: np.ndarray) -> np.ndarray:
-    """Compute velocity from position using finite differences."""
-    zb_dot = np.gradient(zb, t)
-    return zb_dot
-
-
-def find_apex_heights(zb: np.ndarray, zb_dot: np.ndarray, t: np.ndarray,
-                      threshold: float = 0.05) -> tuple:
-    """
-    Find apex heights where velocity crosses zero from positive to negative.
-    """
-    apex_heights = []
-    apex_times = []
-
-    for i in range(1, len(zb_dot)):
-        if zb_dot[i-1] > threshold and zb_dot[i] <= threshold:
-            apex_heights.append(zb[i])
-            apex_times.append(t[i])
-
-    return np.array(apex_heights), np.array(apex_times)
-
-
-def print_statistics(data: dict, apex_heights: np.ndarray):
+def print_statistics(data: dict):
     """Print data statistics to console."""
     print(f"\n{'='*60}")
     print("📊 DATA STATISTICS")
@@ -108,19 +86,6 @@ def print_statistics(data: dict, apex_heights: np.ndarray):
     print(f"\n⚡ EFFORT:")
     print(f"  Spring effort: {np.nanmin(data['effort']):.2f} - {np.nanmax(data['effort']):.2f} N")
     
-    print(f"\n{'='*60}")
-    print("🦘 HOPPING ANALYSIS")
-    print(f"{'='*60}")
-    print(f"Number of hops detected: {len(apex_heights)}")
-    if len(apex_heights) > 0:
-        print(f"Mean apex height: {np.mean(apex_heights):.3f} m")
-        print(f"Std apex height:  {np.std(apex_heights):.3f} m")
-        print(f"Min apex height:  {np.min(apex_heights):.3f} m")
-        print(f"Max apex height:  {np.max(apex_heights):.3f} m")
-        if len(apex_heights) >= 5:
-            print(f"First 5 apex heights: {[f'{h:.3f}' for h in apex_heights[:5]]}")
-            print(f"Last 5 apex heights:  {[f'{h:.3f}' for h in apex_heights[-5:]]}")
-    
     # Diagnosis
     print(f"\n{'='*60}")
     print("🔍 DIAGNOSIS")
@@ -133,27 +98,19 @@ def print_statistics(data: dict, apex_heights: np.ndarray):
         print(f"  ⚠️  TILTED. Final theta = {final_theta:.2f}°")
     else:
         print(f"  ❌ FELL! Final theta = {final_theta:.2f}°")
-    
-    if len(apex_heights) > 5:
-        print(f"  ✅ HOPPING! {len(apex_heights)} hops detected")
-    elif len(apex_heights) > 0:
-        print(f"  ⚠️  Few hops: {len(apex_heights)} hops detected")
-    else:
-        print(f"  ❌ NO HOPPING detected")
 
 
-def plot_hopping_analysis(data: dict, apex_heights: np.ndarray, apex_times: np.ndarray,
-                          output_path: str, time_window: float = 30.0):
+def plot_hopping_analysis(data: dict, output_path: str, time_window: float = 30.0):
     """
-    Generate hopping analysis plot with 6 subplots.
+    Generate hopping analysis plot with 4 subplots.
     """
     t = data['t']
     if time_window is None:
         time_window = t[-1]
     mask = t <= time_window
 
-    fig, axes = plt.subplots(3, 2, figsize=(14, 10))
-    fig.suptitle(f'2D Monoped Hopping Analysis (First {time_window:.0f} seconds)', fontsize=14, fontweight='bold')
+    fig, axes = plt.subplots(2, 2, figsize=(14, 7))
+    fig.suptitle(f'2D Monoped Analysis (First {time_window:.0f} seconds)', fontsize=14, fontweight='bold')
 
     # Plot 1: Theta (pitch angle)
     ax = axes[0, 0]
@@ -180,41 +137,17 @@ def plot_hopping_analysis(data: dict, apex_heights: np.ndarray, apex_times: np.n
     ax = axes[1, 0]
     ax.plot(t[mask], data['torque'][mask], 'm-', linewidth=0.5)
     ax.axhline(y=0, color='k', linestyle='-', alpha=0.3)
+    ax.set_xlabel('Time (s)')
     ax.set_ylabel('Torque (Nm)')
     ax.set_title('Reaction Wheel Torque')
     ax.grid(True, alpha=0.3)
 
-    # Plot 4: Apex heights convergence
+    # Plot 4: Effort
     ax = axes[1, 1]
-    if len(apex_heights) > 0:
-        ax.plot(range(len(apex_heights)), apex_heights, 'bo-', markersize=4, linewidth=1)
-        ax.axhline(y=np.mean(apex_heights), color='r', linestyle='--', 
-                   label=f'Mean={np.mean(apex_heights):.3f}m')
-        ax.set_xlabel('Hop number')
-        ax.set_ylabel('Apex height (m)')
-        ax.legend(loc='upper right')
-    else:
-        ax.text(0.5, 0.5, 'No hops detected', ha='center', va='center', transform=ax.transAxes)
-    ax.set_title('Apex Height per Hop')
-    ax.grid(True, alpha=0.3)
-
-    # Plot 5: Effort
-    ax = axes[2, 0]
     ax.plot(t[mask], data['effort'][mask], 'g-', linewidth=0.5)
     ax.set_xlabel('Time (s)')
     ax.set_ylabel('Effort (N)')
     ax.set_title('Spring Effort Command')
-    ax.grid(True, alpha=0.3)
-
-    # Plot 6: Phase plot (theta vs theta_dot)
-    ax = axes[2, 1]
-    colors = plt.cm.viridis(np.linspace(0, 1, np.sum(mask)))
-    ax.scatter(data['theta'][mask], data['theta_dot'][mask], c=colors, s=1, alpha=0.5)
-    ax.axvline(x=90, color='g', linestyle='--', linewidth=2, alpha=0.7)
-    ax.axhline(y=0, color='k', linestyle='-', alpha=0.3)
-    ax.set_xlabel('Theta (deg)')
-    ax.set_ylabel('Theta_dot (deg/s)')
-    ax.set_title('Phase Plot (color = time)')
     ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
@@ -230,7 +163,7 @@ def plot_zoomed(data: dict, output_path: str, time_start: float = 0, time_end: f
     t = data['t']
     mask = (t >= time_start) & (t <= time_end)
 
-    fig, axes = plt.subplots(2, 2, figsize=(14, 8))
+    fig, axes = plt.subplots(2, 2, figsize=(14, 7))
     fig.suptitle(f'Zoomed View: {time_start:.1f}s - {time_end:.1f}s', fontsize=14, fontweight='bold')
 
     # Theta zoomed
@@ -303,20 +236,14 @@ def main():
     data = extract_debug_state(bag_path)
     print(f"   Found {len(data['t'])} samples over {data['t'][-1]:.2f} seconds")
 
-    # Compute velocity from position
-    zb_dot = compute_zb_dot(data['zb'], data['t'])
-
-    # Find apex heights
-    apex_heights, apex_times = find_apex_heights(data['zb'], zb_dot, data['t'])
-
     # Print statistics
-    print_statistics(data, apex_heights)
+    print_statistics(data)
 
     # Generate plots
     print(f"\n📊 Generating plots...")
     
     plot_hopping_analysis(
-        data, apex_heights, apex_times,
+        data,
         os.path.join(output_dir, 'hopping_analysis.png'),
         time_window=30.0  # First 30 seconds
     )
