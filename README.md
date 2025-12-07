@@ -463,17 +463,11 @@ For better view please watch the [video here](images/demo-phase2_v2.mp4).
 
 | Parameter | Value |
 |-----------|-------|
-| Duration | 34.65 seconds |
-| Samples | 10,478 |
 | Desired height (Hd) | 0.60 m |
 | Mean apex height | 0.651 m |
 | Std deviation (height) | ±0.120 m |
 | Forward pitch angle | 96.11° |
 | Backward pitch angle | 82.73° |
-| Mean pitch angle | 90.13° |
-| Std deviation (pitch) | ±1.80° |
-| Number of hops | 1,616 |
-| Final theta | 90.01° |
 
 
 #### Hopping and Attitude Behavior Analysis
