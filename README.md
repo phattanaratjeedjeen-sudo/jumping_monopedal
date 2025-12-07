@@ -477,20 +477,24 @@ For better view please watch the [video here](images/demo-phase2_v2.mp4).
 **Plot Description:**
 1. **Top Left**: Body pitch angle showing oscillation (target alternates between 85° and 95° during ground phase for disturbance testing)
 2. **Top Right**: Body and foot height showing periodic hopping behavior
-3. **Middle Left**: Reaction wheel torque commands for attitude stabilization
-4. **Middle Right**: Apex height per hop showing convergence to mean height
-5. **Bottom Left**: Spring effort commands during stance phase
-6. **Bottom Right**: Phase portrait (theta vs theta_dot) with color gradient representing time progression
+3. **Bottom Left**: Reaction wheel torque commands for attitude stabilization
+4. **Bottom Right**: Spring effort commands during stance phase
 
 #### Zoomed View (First 10 seconds)
 
 ![Zoomed Analysis](images/zoomed_0_10s_phase2_v2_.png)
 
+**Plot Description:**
+1. **Top Left**: Body pitch angle (zoomed view)
+2. **Top Right**: Body and foot height with detailed trajectory
+3. **Bottom Left**: Reaction wheel torque commands
+4. **Bottom Right**: Spring effort commands
+
 ### Key Observations
 
-1. **Attitude Stabilization**: Reaction wheels successfully maintain pitch angle near 90° (mean = 90.13°, std = 1.80°)
-2. **Pitch Range**: Forward pitch angle reached 96.11° and backward pitch angle reached 82.73°, showing controlled oscillation within ±6° range
-3. **Hopping Performance**: Robot achieved around 4 hops per seconds with mean apex height of 0.651m
+1. **Attitude Stabilization**: Reaction wheels successfully maintain pitch angle near 90° during hopping cycles
+2. **Pitch Range**: Controlled oscillation between target angles (85° backward, 95° forward) for disturbance rejection testing
+3. **Stable Hopping**: Robot maintains periodic hopping behavior with consistent spring effort and torque commands throughout the simulation
 
 ## Members
 
