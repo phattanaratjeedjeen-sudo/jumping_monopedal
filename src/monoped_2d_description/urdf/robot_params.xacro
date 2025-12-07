@@ -27,8 +27,6 @@
 
     <!-- ============== REACTION WHEEL PARAMETERS ============== -->
     <!-- Reaction wheels on both sides of body for attitude control -->
-    <!-- Balance: high inertia for control authority, but not too heavy -->
-    <!-- I_wheel = 0.5 * m * r^2 = 0.5 * 1.0 * 0.15^2 ≈ 0.01125 kg.m^2 per wheel -->
     <xacro:property name="rw_r" value="0.15"/>
     <xacro:property name="rw_l" value="0.04"/>
     <xacro:property name="mass_rw" value="0.1"/>
@@ -44,11 +42,10 @@
     <xacro:property name="shank2foot" value="${-shank_l/2}"/>
 
     <!-- ============== MASS PARAMETERS ============== -->
-    <!-- From TD-SLIP model: concentrated body mass with light leg -->
     <xacro:property name="mass_body" value="0.5"/>
     <xacro:property name="mass_thigh" value="0.01"/>
     <xacro:property name="mass_shank" value="0.01"/>
-    <xacro:property name="mass_foot" value="0.08"/>
+    <xacro:property name="mass_foot" value="0.1"/>
 
     <!-- ============== JOINT DYNAMICS ============== -->
     <!-- TD-SLIP with damping for Phase 2 -->
@@ -58,21 +55,19 @@
     <!-- ============== SPRING PARAMETERS ============== -->
     <!-- Leg spring stiffness (ks) -->
     <xacro:property name="leg_stiffness" value="1000"/>
-    <!-- Spring rest length (L0) is defined by link lengths -->
-    <!-- L0 = thigh_l + shank_l = 0.30 m -->
 
     <!-- ============== SPRING JOINT LIMITS ============== -->
     <!-- Spring compression limits (meters) -->
     <xacro:property name="spring_lower_limit" value="0.0"/>
-    <xacro:property name="spring_upper_limit" value="0.1"/>
-    <xacro:property name="spring_effort_limit" value="1000"/>
+    <xacro:property name="spring_upper_limit" value="0.13"/>
+    <xacro:property name="spring_effort_limit" value="100"/>
     <xacro:property name="spring_velocity_limit" value="10"/>
 
     <!-- ============== REACTION WHEEL JOINT ============== -->
     <!-- Continuous rotation for reaction wheels -->
     <xacro:property name="rw_damping" value="0.0"/>
     <xacro:property name="rw_friction" value="0.0"/>
-    <xacro:property name="rw_effort_limit" value="10"/>
+    <xacro:property name="rw_effort_limit" value="3"/>
     <xacro:property name="rw_velocity_limit" value="3000"/>
 
 </robot>

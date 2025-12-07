@@ -35,9 +35,9 @@ class TwoDController(Node):
         self.zf = 0.0          # foot height (m)
         self.zb = 0.0          # body height (m)
         self.zb_dot = 0.0      # body velocity (m/s)
-        self.Hk = None         # actual height of current hop (m)
+        self.Hk = 0.5          # actual height of current hop (m)
         self.Hc = 0.0          # value given to controller as apex height of current hop (m)
-        self.Hd = 0.7         # desired height to reach at apex of next hop (m)
+        self.Hd = 0.7          # desired height to reach at apex of next hop (m)
         self.Ls = self.l0
         self.g = 9.81          # gravity acc (m/s^2)
         self.ks = 1000       # spring stiffness (N/m)
@@ -51,15 +51,10 @@ class TwoDController(Node):
         self.force = 0.0
         self.tilt = 0.0  # tilt degrees
         self.hop_count = 0
-        self.hop_toggle = True
-
-        # self.Kg = [11.5792, 1.028]  
-        # self.Kf = [56.2725/2, 2.25/2]  
-        # self.Ng = 11.6
-        # self.Nf = 56.2725/2     
+        self.hop_toggle = True   
 
         self.Kg = [20.1, 2.3]  
-        self.Kf = [18.4, 2.1]  
+        self.Kf = [18.4, 2.1]
         self.Ng = self.Kg[0]
         self.Nf = self.Kf[0]
         
@@ -159,11 +154,11 @@ class TwoDController(Node):
         if self.state == 'compress' or self.state == 'air':
             self.torque_compute(self.Nf, self.theta_desired, self.Kf)
         elif self.state == 'touchdown' or self.state == 'rebound':
-            self.theta_desired = 90.0
             self.torque_compute(self.Ng, self.theta_desired + self.tilt, self.Kg)
         
         self.pub_effort(self.force, self.torque)
-        # self.get_logger().info(f'State: {self.state}, zb: {self.zb:.2f}, Zb_dot: {self.zb_dot:.2f}, zf: {self.zf:.2f}, T: {self.torque:.2f}, theta: {self.theta:.2f}, theta_dot = {self.theta_dot:.2f}' )  
+        # self.get_logger().info(f'State: {self.state}, zb: {self.zb:.2f}, Zb_dot: {self.zb_dot:.2f}, zf: {self.zf:.2f}, T: {self.torque:.2f}, theta: {self.theta:.2f}, theta_dot = {self.theta_dot:.2f}' )
+        self.get_logger().info(f'Hk: {self.Hk:.2f}, Hd: {self.Hd:.2f}, u: {self.u:.2f}, c: {self.compress:.2f}, F: {self.force:.2f}' )  
 
 
     def force_compute(self):
@@ -195,7 +190,6 @@ class TwoDController(Node):
         theta_desired_rad = math.radians(theta_desired)
         theta_dot_rad = math.radians(self.theta_dot)
         theta_rad = math.radians(self.theta)
-
         self.torque = theta_desired_rad * Nbar - (K[0] * theta_rad + K[1] * theta_dot_rad)
 
     def pub_effort(self, force, torque):

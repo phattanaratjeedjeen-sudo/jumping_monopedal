@@ -26,7 +26,7 @@ def generate_launch_description():
 
     spawn_x_val = "0.0"
     spawn_y_val = "0.0"
-    spawn_z_val = "1.5"
+    spawn_z_val = "1.2"
     spawn_roll_val = "0.0"
     spawn_pitch_val = "0.0"
     spawn_yaw_val = "0.0"
@@ -112,7 +112,7 @@ def generate_launch_description():
 
     twoD_controller = Node(
         package=controller_package_name,
-        executable='twoD_copy.py',
+        executable='twoD.py',
         name='twoD_controller',
     )
 

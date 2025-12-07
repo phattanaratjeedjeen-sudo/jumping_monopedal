@@ -198,7 +198,7 @@ The robot consists of 5 links connected in series:
 |--------|-------------|---------------|
 | $z_b$ | Body height from ground | Variable (measured by altimeter) |
 | $z_f$ | Foot height from ground | $z_f = z_b - L_0$ |
-| $L_0$ | Spring equilibrium length | 0.38 m (from body center to foot) |
+| $L_0$ | leg length | 0.38 m (from body center to foot) |
 | $z$ | Vertical axis | Positive upward from ground (z=0) |
 
 Where $q_1$ and $q_2$ are the prismatic joint displacements (spring compressions).
@@ -208,7 +208,7 @@ Where $q_1$ and $q_2$ are the prismatic joint displacements (spring compressions
 | Parameter | Symbol | Value |
 |-----------|--------|-------|
 | Body mass | $M_b$ | 1.0 kg |
-| Foot mass | $M_f$ | 0.08 kg |
+| Foot mass | $M_f$ | 0.1 kg |
 | Active Spring stiffness | $k_s$ | 1000 N/m |
 | Passive Spring stiffness | $k_s$ | 1000 N/m |
 | Spring equilibrium length | $L_0$ | 0.38 m |
@@ -238,14 +238,15 @@ The hopping motion follows a hybrid cycle with multiple domains:
 
 The deadbeat controller calculates the required energy input to reach the desired hop height using:
 
-$$u(Hc, Hd) = EL + ET + EH$$
+$$u = EL + ET + EH$$
 
 Where:
 - $EL = Mf \times g \times (Hc - L0)$ — Energy lost at landing impact
 - $ET = (Mb + Mf) \times g \times (Hd - L0) \times \frac{Mf}{Mb}$ — Energy lost at takeoff impact
 - $EH = (Mb + Mf) \times g \times (Hd - Hc)$ — Potential energy for height change
+- $u$ — Potential energy of active spring must be generated
 
-The desired spring compression is then:
+The desired spring compression ($\delta^*$) is then:
 
 $$
 \delta^* = \sqrt{\frac{2u}{k_s}}
@@ -285,9 +286,9 @@ For better view please watch the [video here](images/demo-phase1.mp4).
 
 ## 2D Monopedal Robot Model With Reaction Wheel (undamped case)
 
-This implementation is based on the **Torque Driven Spring Loaded Inverted Pendulum (TD-SLIP)** model described in [[2]](#references). Or You can read the full report [here](./2407.12120%202.pdf).
+The quation of motion is based on the **Torque Driven Spring Loaded Inverted Pendulum (TD-SLIP)** model described in [[2]](#references). Or You can read the full report [here](./2407.12120%202.pdf).
 
-This phase is developed based on Phase 1 [1D Monopedal Robot Model With Deadbeat Controller (undamped case)](#1d-monopedal-robot-model-with-deadbeat-controller-undamped-case).
+This phase is developed based on Phase 1 [1D Monopedal Robot Model With Deadbeat Controller (undamped case)](#1d-monopedal-robot-model-with-deadbeat-controller-undamped-case). By adding 2 reaction wheel, full state feed controller to control the tilt angle of the robot and some robot's urdf modifiaction 
 
 ### Usage
 To run the 2D monopedal robot simulation with the reaction wheel controller, use the following command:
@@ -328,6 +329,8 @@ $$\ddot{\theta} = -\frac{2\dot{\zeta}\dot{\theta}}{\zeta} - \frac{g\cos(\theta)}
 
 $$\ddot{\zeta} = \zeta\dot{\theta}^2 - g\sin(\theta) - \frac{k_0}{m}(\zeta - \ell_0) - \frac{b_\ell}{m}\dot{\zeta}$$
 
+
+
 **Flight Phase:**
 
 During flight, only the reaction wheel provides control authority:
@@ -352,15 +355,11 @@ Where $I_{robot}$ is the robot's moment of inertia about the center of mass.
 | Shank mass | $M_{shank}$ | 0.01 kg |
 | Foot mass | $M_{foot}$ | 0.1 kg |
 | Spring stiffness | $k_0$ | 1000 N/m |
-| Leg damping | $b_\ell$ | 0.2 N·s/m |
+| Leg damping | $b_\ell$ | 0.1 N·s/m |
 | Spring equilibrium length | $\ell_0$ | 0.30 m |
 | Gravity acceleration | $g$ | 9.81 m/s² |
 | Body dimensions | $b_x \times b_y \times b_z$ | 0.15 × 0.15 × 0.15 m |
-| Thigh length | $\ell_{thigh}$ | 0.15 m |
-| Shank length | $\ell_{shank}$ | 0.15 m |
-| Reaction wheel radius | $r_{rw}$ | 0.15 m |
-| Reaction wheel damping | $b_{rw}$ | 0.0 N·m·s/rad |
-| Reaction wheel friction | $f_{rw}$ | 0.0 |
+| leg lenght | $\zeta$ | unmeasured |
 
 ### Hybrid Domain Cycle
 
@@ -373,20 +372,19 @@ The 2D hopping motion follows a hybrid cycle similar to Phase 1:
 
 ### Controller Design
 
-The 2D controller combines vertical hopping control with pitch stabilization using state-feedback control.
+The 2D controller combines vertical hopping control with pitch stabilization using full state-feedback control.
 
-#### Vertical Control (Energy-Based Deadbeat)
+#### Vertical Control (Energy-Based Control)
 The vertical hopping controller uses the same energy-based deadbeat approach from Phase 1 to regulate apex height through spring compression control.
 
 #### Pitch Stabilization (State-Feedback Control)
+There are 2 controller for each domain (ground and flight) due to equation of motion in flight and ground phase.
 
-**Linearization:**
-The stance phase dynamics are linearized around an operating point to design an LQR controller.
+**Ground Phase**: The stance phase dynamics are linearized around an operating point to design an LQR controller.
 
 **State Vector:** $\mathbf{x} = [\theta, \dot{\theta}, \ell, \dot{\ell}]^T$
 
 **Operating Point:**
-- Torque: $\tau = 0$ Nm
 - Leg length: $\ell = 0.3$ m
 - Leg velocity: $\dot{\ell} = 0$ m/s
 - Pitch angle: $\theta = \pi/2$ rad (90°, upright)
@@ -399,20 +397,26 @@ $$\dot{\mathbf{x}} = A\mathbf{x} + B\tau$$
 Where $A$ and $B$ are obtained by linearizing the stance phase dynamics equations.
 
 **LQR Design:**
-State-feedback gains are computed using MATLAB's `lqr` function with:
-- State weighting matrix: $Q = \text{diag}([100, 0, 0, 0])$ (prioritize angle control)
+State-feedback gains are computed using MATLAB's `lqrd` function with sampling period 10 ms and defind Q and R vector by using **Bryson's Rules** with:
+- accept pitch angle error = 3 deg
+- torque limitation = 1 Nm
+
+which makes
+- State weighting matrix: $Q = \text{diag}([365, 0, 0, 0])$
 - Control weighting: $R = 1$
 
-This yields the stance phase gain: $K_g = [11.5792, 1.0208, 0.0000, 0.0000]$
+This yields the stance phase gain: $K_g = [17.94, 1.26, 0, 0.0]$
 
 **Command Feedforward:**
-The feedforward gain $N_g$ is computed using the `rscale` function and tuned to $N_g = 11.6$.
+The feedforward gain $N_g$ is computed using the `rscale` function and tuned to $N_g = 16.45$ but after tuning $N_g = 17.49$ is used 
 
 **MATLAB Implementation:**
 The controller gains are computed offline using MATLAB. The implementation can be found in the [matlab](matlab/) directory:
-- [twoD.m](matlab/twoD.m) - Main script for computing LQR gains (ground phase) and pole placement gains (flight phase)
+- [hop_2d.mlx](matlab/hop_2d.mlx) - Main script for computing LQR gains (ground phase) and pole placement gains (flight phase)
 - [rscale.m](matlab/rscale.m) - Function to compute feedforward gain $N$ for step reference tracking
-- [twoD_ground.slx](matlab/twoD_ground.slx) - Simulink model for system simulation
+- [hop_2D_sim.slx](matlab/hop_2D_sim.slx) - Simulink model for system simulation
+
+
 
 **Control Law:**
 
@@ -420,21 +424,17 @@ $$\tau = N_g \theta_d - K_g (\mathbf{x} - \mathbf{x}_d)$$
 
 Where $\theta_d$ is the desired pitch angle (90°).
 
-**Flight Phase Controller:**
-During flight, the system dynamics simplify to a 2-state system since leg length is not controllable. The flight controller uses pole placement with Ackermann's formula:
+**Flight Phase :**
+During flight, the system dynamics has 2-state. Controller in this domain uses procedure similar to stance domain.
 - State vector: $\mathbf{x}_f = [\theta, \dot{\theta}]^T$
-- Desired poles: $p = -50 \pm 1i$ (fast, slightly underdamped response)
-- Includes wheel damping: $b_w = 0.001$ N·m·s/rad
+- States feedback gains: $[15.82, 0.92]$
+- Compensate gain: $15.82$
+
 
 **Control Gains:**
-- Ground phase: $K_g = [11.58, 1.02, 0.0, 0.0]$, $N_g = 11.6$
-- Flight phase: $K_f = [14.068, 0.5625]$, $N_f = 14.068$ (only $\theta$ and $\dot{\theta}$ states)
+- Ground phase: $K_g = [17.94, 1.26, 0.0, 0.0]$, $N_g = 17.94$
+- Flight phase: $K_f = [15.82, 0.92]$, $N_f = 15.82$
 
-**Stability Mechanisms:**
-1. **Torque Saturation**: Prevents excessive control effort
-2. **Rate Limiting**: Smooths torque commands to prevent oscillations
-3. **Joint Damping**: Passive damping (1.0 N·m·s/rad) reduces wheel overshoot
-4. **State-Dependent Gains**: Different gains for ground vs. flight phases account for changing dynamics
 
 ### Demo Video
 

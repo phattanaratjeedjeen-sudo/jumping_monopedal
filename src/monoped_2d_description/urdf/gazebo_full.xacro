@@ -9,6 +9,8 @@
         <!-- Spring Joint: Effort control for spring compression -->
         <joint name="thigh_to_shank">
             <command_interface name="effort"/>
+                <param name="min">0</param>
+                <param name="max">100</param>
             <state_interface name="position">
                 <param name="initial_value">0.0</param>
             </state_interface>
@@ -28,6 +30,8 @@
         <!-- Left Reaction Wheel: Effort (torque) control for attitude -->
         <joint name="body_to_rw_left">
             <command_interface name="effort"/>
+                <param name="min">-3</param>
+                <param name="max">3</param>
             <state_interface name="position">
                 <param name="initial_value">0.0</param>
             </state_interface>
@@ -38,6 +42,8 @@
         <!-- Right Reaction Wheel: Effort (torque) control for attitude -->
         <joint name="body_to_rw_right">
             <command_interface name="effort"/>
+                <param name="min">-3</param>
+                <param name="max">3</param>
             <state_interface name="position">
                 <param name="initial_value">0.0</param>
             </state_interface>
