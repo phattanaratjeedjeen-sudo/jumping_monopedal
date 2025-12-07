@@ -475,7 +475,7 @@ For better view please watch the [video here](images/demo-phase2_v2.mp4).
 ![Hopping Analysis](images/hopping_analysis_phase2_v2_.png)
 
 **Plot Description:**
-1. **Top Left**: Body pitch angle showing oscillation (target alternates between 85° and 95° during ground phase for disturbance testing)
+1. **Top Left**: Body pitch angle showing oscillation (target alternates between 85° and 95° during flight phase for)
 2. **Top Right**: Body and foot height showing periodic hopping behavior
 3. **Bottom Left**: Reaction wheel torque commands for attitude stabilization
 4. **Bottom Right**: Spring effort commands during stance phase
@@ -492,8 +492,8 @@ For better view please watch the [video here](images/demo-phase2_v2.mp4).
 
 ### Key Observations
 
-1. **Attitude Stabilization**: Reaction wheels successfully maintain pitch angle near 90° during hopping cycles
-2. **Pitch Range**: Controlled oscillation between target angles (85° backward, 95° forward) for disturbance rejection testing
+1. **Attitude Stabilization**: Reaction wheels successfully maintain pitch angle near 90° during flight domain
+2. **Pitch Range**: Controlled oscillation between target angles (85° backward, 95° forward)
 3. **Stable Hopping**: Robot maintains periodic hopping behavior with consistent spring effort and torque commands throughout the simulation
 
 ## Members
