@@ -266,7 +266,7 @@ For better view please watch the [video here](images/demo-phase1_v2.mp4).
 | Desired height (Hd) | 0.60 m |
 | Mean apex height | 0.633 m |
 | Std deviation | ±0.035 m |
-| Number of hops | 81 |
+| Number of hops | 47 |
 | Convergence | ~5-10 hops |
 
 #### Hopping Behavior Analysis
