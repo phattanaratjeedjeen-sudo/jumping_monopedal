@@ -337,7 +337,7 @@ During flight, only the reaction wheel provides control authority:
 
 $$\tau = I_{robot} \cdot \ddot{\theta}$$
 
-Where $I_{robot}$ is the robot's moment of inertia about the center of mass.
+Where $I_{robot}$ is the robot's moment of inertia about the center of body.
 
 #### TF Tree (URDF Structure)
 
