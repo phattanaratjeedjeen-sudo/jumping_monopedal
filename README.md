@@ -496,9 +496,7 @@ For better view please watch the [video here](images/demo-phase2_v2.mp4).
 
 1. **Attitude Stabilization**: Reaction wheels successfully maintain pitch angle near 90° (mean = 90.13°, std = 1.80°)
 2. **Pitch Range**: Forward pitch angle reached 96.11° and backward pitch angle reached 82.73°, showing controlled oscillation within ±6° range
-3. **Hopping Performance**: Robot achieved 1,616 hops over 34.65 seconds with mean apex height of 0.651m
-4. **Stable Control**: Controller maintained stable hopping until end of simulation (final theta = 90.01°)
-5. **Height Convergence**: Apex height shows steady increase from initial 0.415m towards target 0.60m
+3. **Hopping Performance**: Robot achieved around 4 hops per seconds with mean apex height of 0.651m
 
 ## Members
 
