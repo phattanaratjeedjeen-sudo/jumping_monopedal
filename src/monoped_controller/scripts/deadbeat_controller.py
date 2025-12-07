@@ -63,7 +63,7 @@ class DeadBeatController(Node):
         msg = DebugDeadbeat()
         msg.zb = self.zb
         msg.zb_dot = self.zb_dot
-        msg.zf = self.zf
+        msg.zf = max(0.0, self.zf)
         msg.hk = self.Hk
         msg.hc = self.Hc
         msg.hd = self.Hd

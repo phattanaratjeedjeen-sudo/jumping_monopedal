@@ -73,7 +73,7 @@ class TwoDController(Node):
     def publish_debug_state(self):
         msg = Debug2D()
         msg.zb = self.zb
-        msg.zf = self.zf
+        msg.zf = max(0.0, self.zf)
         msg.force = self.force
         msg.theta = self.theta
         msg.theta_dot = self.theta_dot

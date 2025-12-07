@@ -64,7 +64,7 @@ def generate_launch_description():
     gz_sim = IncludeLaunchDescription(
                 PythonLaunchDescriptionSource([os.path.join(
                     get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')]),
-                    launch_arguments={'gz_args': ['-r -v4 ', world], 'on_exit_shutdown': 'true'}.items()
+                    launch_arguments={'gz_args': ['-r -v1 ', world], 'on_exit_shutdown': 'true'}.items()
              )
 
     # Spawn the robot at a specific location
@@ -148,14 +148,14 @@ def generate_launch_description():
         )
     )
 
-    # launch_description.add_action(
-    #     RegisterEventHandler(
-    #         event_handler=OnProcessExit(
-    #             target_action=effort_spawner,
-    #             on_exit=[bag],
-    #         )
-    #     )
-    # )
+    launch_description.add_action(
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=effort_spawner,
+                on_exit=[bag],
+            )
+        )
+    )
 
 
     # Add launch actions

@@ -157,14 +157,14 @@ def generate_launch_description():
         )
     )
 
-    # launch_description.add_action(
-    #     RegisterEventHandler(
-    #         event_handler=OnProcessExit(
-    #             target_action=effort_spawner,
-    #             on_exit=[bag],
-    #         )
-    #     )
-    # )
+    launch_description.add_action(
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=effort_spawner,
+                on_exit=[bag],
+            )
+        )
+    )
 
 
     # Add launch actions

@@ -24,7 +24,7 @@ def extract_debug_state(bag_path: str) -> dict:
     Extract /debug_deadbeat topic data from bag file.
 
     Uses DebugDeadbeat message type with fields:
-    zb, zb_dot, zf, hk, hc, hd, u, effort, state_code
+    zb, zb_dot, zf, hk, hc, hd, u, force, state_code, hop
     state_code: air=0, compress=1, touchdown=2, rebound=3, unknown=-1
     """
     db_files = [f for f in os.listdir(bag_path) if f.endswith('.db3')]
@@ -61,7 +61,7 @@ def extract_debug_state(bag_path: str) -> dict:
         Hc_list.append(msg.hc)
         Hd_list.append(msg.hd)
         u_list.append(msg.u)
-        effort_list.append(msg.effort)
+        effort_list.append(msg.force)
         state_list.append(msg.state_code)
 
     t = np.array(timestamps)
@@ -84,27 +84,18 @@ def extract_debug_state(bag_path: str) -> dict:
 def find_apex_heights(zb: np.ndarray, zb_dot: np.ndarray, t: np.ndarray,
                       Hk: np.ndarray = None, threshold: float = 0.01) -> tuple:
     """
-    Find apex heights from Hk data (preferred) or by detecting velocity zero crossings.
+    Find apex heights by detecting velocity zero crossings (positive to negative).
 
-    If Hk data is provided, extract apex heights from transitions where Hk becomes valid.
-    Otherwise, fall back to velocity-based detection.
+    Apex occurs when velocity crosses from positive to negative (going up then down).
     """
     apex_heights = []
     apex_times = []
 
-    if Hk is not None:
-        # Extract apex heights from Hk transitions (NaN -> valid value only)
-        # Only count when Hk goes from NaN to a valid value (new apex detected)
-        for i in range(1, len(Hk)):
-            if np.isnan(Hk[i-1]) and not np.isnan(Hk[i]):
-                apex_heights.append(Hk[i])
-                apex_times.append(t[i])
-    else:
-        # Fallback to velocity-based detection
-        for i in range(1, len(zb_dot)):
-            if zb_dot[i-1] > threshold and zb_dot[i] <= threshold:
-                apex_heights.append(zb[i])
-                apex_times.append(t[i])
+    # Velocity-based detection: apex when velocity crosses from + to -
+    for i in range(1, len(zb_dot)):
+        if zb_dot[i-1] > threshold and zb_dot[i] <= threshold:
+            apex_heights.append(zb[i])
+            apex_times.append(t[i])
 
     return np.array(apex_heights), np.array(apex_times)
 
@@ -125,7 +116,7 @@ def print_statistics(data: dict, apex_heights: np.ndarray):
     print(f"  min: {np.nanmin(data['zf']):.4f} m")
     print(f"  max: {np.nanmax(data['zf']):.4f} m")
     print(f"\nDesired height (Hd): {data['Hd'][0]:.4f} m")
-    print(f"\nEffort commands:")
+    print(f"\nForce commands:")
     print(f"  min: {np.nanmin(data['effort']):.2f} N")
     print(f"  max: {np.nanmax(data['effort']):.2f} N")
     print(f"\n{'='*50}")
@@ -183,12 +174,12 @@ def plot_hopping_analysis(data: dict, apex_heights: np.ndarray,
     ax3.set_title(f'Phase Plot (First {time_window:.0f} seconds)')
     ax3.grid(True, alpha=0.3)
 
-    # Plot 4: Effort commands over time
+    # Plot 4: Force commands over time
     ax4 = axes[3]
     ax4.plot(t[mask], data['effort'][mask], 'r-', linewidth=0.5)
     ax4.set_xlabel('Time (s)')
-    ax4.set_ylabel('Effort (N)')
-    ax4.set_title(f'Effort Commands (First {time_window:.0f} seconds)')
+    ax4.set_ylabel('Force (N)')
+    ax4.set_title(f'Force Commands (First {time_window:.0f} seconds)')
     ax4.grid(True, alpha=0.3)
 
     plt.tight_layout()

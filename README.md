@@ -174,7 +174,7 @@ ros2 launch monoped_description sim.launch.py
 
 ### Model Description
 
-![Model Diagram](images/model.png)
+![Model Diagram](images/model_v2.png)
 
 Our implementation uses a modified CRH model with two springs:
 - **Active Spring**: Controlled by effort controller (energy release)
@@ -211,7 +211,7 @@ Where $q_1$ and $q_2$ are the prismatic joint displacements (spring compressions
 | Foot mass | $M_f$ | 0.1 kg |
 | Active Spring stiffness | $k_s$ | 1000 N/m |
 | Passive Spring stiffness | $k_s$ | 1000 N/m |
-| Spring equilibrium length | $L_0$ | 0.38 m |
+| Leg length | $L_0$ | 0.38 m |
 
 ### Hybrid Domain Cycle
 
@@ -254,35 +254,36 @@ $$
 
 ### Demo Video
 
-![demo_video](images/demo-phase1.gif)
+![demo_video](images/demo-phase1_v2.gif)
 
-For better view please watch the [video here](images/demo-phase1.mp4).
+For better view please watch the [video here](images/demo-phase1_v2.mp4).
 
 ### Simulation Results
 
 | Parameter | Value |
 |-----------|-------|
-| Desired height (Hd) | 0.50 m |
-| Mean apex height | 0.52 m |
-| Std deviation | ±0.034 m |
-| Number of hops | 159 |
+| Duration | 50.95 seconds |
+| Desired height (Hd) | 0.60 m |
+| Mean apex height | 0.633 m |
+| Std deviation | ±0.035 m |
+| Number of hops | 81 |
 | Convergence | ~5-10 hops |
 
 #### Hopping Behavior Analysis
 
-![Hopping Analysis](images/undamped_hopping_analysis.png)
+![Hopping Analysis](images/hopping_analysis_v2.png)
 
 **Plot Description:**
 1. **Top**: Body and foot height over time showing stable periodic hopping
-2. **Second**: Apex height convergence from initial ~0.76m to target ~0.5m
+2. **Second**: Apex height convergence from initial ~0.76m to target ~0.6m
 3. **Third**: Phase plot (zb vs velocity) showing convergence to limit cycle
-4. **Bottom**: Effort commands applied during compress phase
+4. **Bottom**: Force commands applied during compress phase
 
 ### Key Observations
 
 1. **Fast Convergence**: The controller achieves near-deadbeat convergence (~5-10 hops)
 2. **Stable Periodic Orbit**: System converges to a stable limit cycle
-3. **Small Steady-State Error**: Mean height (0.52m) slightly above target (0.50m) due to simulation dynamics
+3. **Small Steady-State Error**: Mean height (0.633m) slightly above target (0.60m) due to simulation dynamics
 
 ## 2D Monopedal Robot Model With Reaction Wheel (undamped case)
 
@@ -355,11 +356,11 @@ Where $I_{robot}$ is the robot's moment of inertia about the center of body.
 | Shank mass | $M_{shank}$ | 0.01 kg |
 | Foot mass | $M_{foot}$ | 0.1 kg |
 | Spring stiffness | $k_0$ | 1000 N/m |
-| Leg damping | $b_\ell$ | 0.1 N·s/m |
+| Leg damping | $b_\ell$ | 0.0 N·s/m |
 | Spring equilibrium length | $\ell_0$ | 0.30 m |
 | Gravity acceleration | $g$ | 9.81 m/s² |
 | Body dimensions | $b_x \times b_y \times b_z$ | 0.15 × 0.15 × 0.15 m |
-| leg lenght | $\zeta$ | unmeasured |
+| Reaction wheel dimensions | $r_{rw} \times l_{rw}$ | 0.15 × 0.04 m |
 
 ### Hybrid Domain Cycle
 
@@ -397,18 +398,24 @@ $$\dot{\mathbf{x}} = A\mathbf{x} + B\tau$$
 Where $A$ and $B$ are obtained by linearizing the stance phase dynamics equations.
 
 **LQR Design:**
-State-feedback gains are computed using MATLAB's `lqrd` function with sampling period 10 ms and defind Q and R vector by using **Bryson's Rules** with:
-- accept pitch angle error = 3 deg
-- torque limitation = 1 Nm
+State-feedback gains are computed using MATLAB's `lqrd` function with sampling period 10 ms and defined Q and R matrices by using **Bryson's Rule** with:
+- Acceptable pitch angle error = 3° (0.0524 rad)
+- Torque limitation = 1 Nm
 
-which makes
-- State weighting matrix: $Q = \text{diag}([365, 0, 0, 0])$
+Which yields:
+- State weighting matrix: $Q = \text{diag}([365, 0, 0, 0])$ where $365 = (1/0.0524)^2$
 - Control weighting: $R = 1$
 
-This yields the stance phase gain: $K_g = [17.94, 1.26, 0, 0.0]$
+This yields the stance phase gain: $K_g = [17.94, 1.26, 0.0, 0.0]$
 
-**Compenstate Gain:**
-The compensate gain $N_g$ is computed using the `rscale` function and tuned to $N_g = 16.45$ but after tuning $N_g = 17.49$ is used 
+**Feedforward Gain:**
+The feedforward gain $N_g$ is computed using the `rscale` function to eliminate steady-state error for step reference tracking:
+
+$$N_g = N_u + K_g \cdot N_x$$
+
+Where $[N_x^T, N_u]^T = [A, B; C, D]^{-1} [0, 0, 0, 0, 1]^T$
+
+For this system, $N_g = 17.94$ (equal to $K_g[0]$) 
 
 **MATLAB Implementation:**
 The controller gains are computed offline using MATLAB. The implementation can be found in the [matlab](matlab/) directory:
@@ -418,67 +425,80 @@ The controller gains are computed offline using MATLAB. The implementation can b
 
 
 
-**Control Law:**
+**Control Law (Ground Phase):**
 
-$$\tau = N_g \theta_d - K_g (\mathbf{x} - \mathbf{x}_d)$$
+$$\tau = N_g \theta_d - K_g \cdot \mathbf{x}$$
 
-Where $\theta_d$ is the desired pitch angle (90°).
+Where:
+- $\theta_d = \pi/2$ rad (90°, upright position)
+- $\mathbf{x} = [\theta, \dot{\theta}, \ell, \dot{\ell}]^T$ is the state vector
 
-**Flight Phase :**
-During flight, the system dynamics has 2-state. Controller in this domain uses procedure similar to stance domain.
-- State vector: $\mathbf{x}_f = [\theta, \dot{\theta}]^T$
-- States feedback gains: $[15.82, 0.92]$
-- Compensate gain: $15.82$
+**Flight Phase:**
+During flight, the system has reduced 2-state dynamics (no leg length states). The controller uses pole placement with similar structure.
 
+**State Vector:** $\mathbf{x}_f = [\theta, \dot{\theta}]^T$
 
-**Control Gains:**
-- Ground phase: $K_g = [17.94, 1.26, 0.0, 0.0]$, $N_g = 17.94$
-- Flight phase: $K_f = [15.82, 0.92]$, $N_f = 15.82$
+**Design Parameters:**
+- State-feedback gains: $K_f = [15.82, 0.92]$
+- Feedforward gain: $N_f = 15.82$
+
+**Control Law (Flight Phase):**
+
+$$\tau = N_f \theta_d - K_f \cdot \mathbf{x}_f$$
+
+**Summary of Control Gains:**
+| Phase | State-Feedback Gains $K$ | Feedforward Gain $N$ |
+|-------|--------------------------|---------------------|
+| Ground | $[17.94, 1.26, 0.0, 0.0]$ | $17.94$ |
+| Flight | $[15.82, 0.92]$ | $15.82$ |
 
 
 ### Demo Video
 
-![demo_video](images/demo-phase2.gif)
+![demo_video](images/demo-phase2_v2.gif)
 
-For better view please watch the [video here](images/demo-phase2.mp4).
+For better view please watch the [video here](images/demo-phase2_v2.mp4).
 
 ### Simulation Results
 
 | Parameter | Value |
 |-----------|-------|
-| Duration | 425.89 seconds |
-| Samples | 127,501 |
-| Desired height (Hd) | 1.5 m |
-| Mean apex height | 1.002 m |
-| Std deviation (height) | ±1.388 m |
-| Mean pitch angle | 90.06° |
-| Std deviation (pitch) | ±1.17° |
-| Number of hops | 19,479 |
-| Final theta | 122.05° (fell) |
+| Duration | 34.65 seconds |
+| Samples | 10,478 |
+| Desired height (Hd) | 0.60 m |
+| Mean apex height | 0.651 m |
+| Std deviation (height) | ±0.120 m |
+| Forward pitch angle | 96.11° |
+| Backward pitch angle | 82.73° |
+| Mean pitch angle | 90.13° |
+| Std deviation (pitch) | ±1.80° |
+| Number of hops | 1,616 |
+| Final theta | 90.01° |
 
 
 #### Hopping and Attitude Behavior Analysis
 
-![Hopping Analysis](images/hopping_analysis.png)
+![Hopping Analysis](images/hopping_analysis_phase2_v2.png)
 
 **Plot Description:**
-1. **Top Left**: Body pitch angle (theta) showing stable oscillation around 90° target
+1. **Top Left**: Body pitch angle showing oscillation (target alternates between 85° and 95° during ground phase for disturbance testing)
 2. **Top Right**: Body and foot height showing periodic hopping behavior
-3. **Middle Left**: Reaction wheel torque commands
-4. **Middle Right**: Apex height per hop showing convergence
-5. **Bottom Left**: Spring effort commands during compress phase
-6. **Bottom Right**: Phase portrait (theta vs theta_dot) showing limit cycle behavior
+3. **Middle Left**: Reaction wheel torque commands for attitude stabilization
+4. **Middle Right**: Apex height per hop showing convergence to mean height
+5. **Bottom Left**: Spring effort commands during stance phase
+6. **Bottom Right**: Phase portrait (theta vs theta_dot) with color gradient representing time progression
 
 #### Zoomed View (First 10 seconds)
 
-![Zoomed Analysis](images/zoomed_0_10s.png)
+![Zoomed Analysis](images/zoomed_0_10s_phase2_v2.png)
 
 ### Key Observations
 
-1. **Attitude Stabilization**: Reaction wheels successfully maintain pitch angle near 90° (mean = 90.06°, std = 1.17°)
-2. **Hopping Performance**: Robot achieved 19,479 hops over 425 seconds with mean apex height of 1.002m
-3. **Physics Instability**: Gazebo physics explosion occurred near end of simulation (theta_dot spike to 2.9M °/s)
-4. **Controller Robustness**: Controller performed correctly; the crash was due to Gazebo collision detection failure, not controller error
+1. **Attitude Stabilization**: Reaction wheels successfully maintain pitch angle near 90° (mean = 90.13°, std = 1.80°)
+2. **Pitch Range**: Forward pitch angle reached 96.11° and backward pitch angle reached 82.73°, showing controlled oscillation within ±6° range
+3. **Hopping Performance**: Robot achieved 1,616 hops over 34.65 seconds with mean apex height of 0.651m
+4. **Stable Control**: Controller maintained stable hopping until end of simulation (final theta = 90.01°)
+5. **Height Convergence**: Apex height shows steady increase from initial 0.415m towards target 0.60m
 
 ## Members
 

@@ -45,7 +45,7 @@ def extract_debug_state(bag_path: str) -> dict:
         timestamps.append(ts / 1e9)
         zb_list.append(msg.zb)
         zf_list.append(msg.zf)
-        effort_list.append(msg.effort)
+        effort_list.append(msg.force)
         theta_list.append(msg.theta)
         theta_dot_list.append(msg.theta_dot)
         torque_list.append(msg.torque)
@@ -153,13 +153,14 @@ def plot_hopping_analysis(data: dict, apex_heights: np.ndarray, apex_times: np.n
     mask = t <= time_window
 
     fig, axes = plt.subplots(3, 2, figsize=(14, 10))
-    fig.suptitle(f'2D Monoped Hopping Analysis', fontsize=14, fontweight='bold')
+    fig.suptitle(f'2D Monoped Hopping Analysis (First {time_window:.0f} seconds)', fontsize=14, fontweight='bold')
 
     # Plot 1: Theta (pitch angle)
     ax = axes[0, 0]
     ax.plot(t[mask], data['theta'][mask], 'b-', linewidth=0.5)
-    ax.axhline(y=90, color='g', linestyle='--', linewidth=2, label='Target (90°)')
-    ax.fill_between(t[mask], 85, 95, alpha=0.2, color='green', label='±5° band')
+    ax.axhline(y=95, color='orange', linestyle='--', linewidth=1.5, alpha=0.7, label='Forward Target (95°)')
+    ax.axhline(y=85, color='purple', linestyle='--', linewidth=1.5, alpha=0.7, label='Backward Target (85°)')
+    ax.fill_between(t[mask], 85, 95, alpha=0.2, color='gray', label='Target Range')
     ax.set_ylabel('Theta (deg)')
     ax.set_title('Body Pitch Angle')
     ax.legend(loc='upper right')
@@ -235,7 +236,9 @@ def plot_zoomed(data: dict, output_path: str, time_start: float = 0, time_end: f
     # Theta zoomed
     ax = axes[0, 0]
     ax.plot(t[mask], data['theta'][mask], 'b-', linewidth=1.5)
-    ax.axhline(y=90, color='g', linestyle='--', linewidth=2, label='Target (90°)')
+    ax.axhline(y=95, color='orange', linestyle='--', linewidth=1.5, alpha=0.7, label='Forward Target (95°)')
+    ax.axhline(y=85, color='purple', linestyle='--', linewidth=1.5, alpha=0.7, label='Backward Target (85°)')
+    ax.fill_between(t[mask], 85, 95, alpha=0.2, color='gray')
     ax.set_ylabel('Theta (deg)')
     ax.set_title('Body Pitch Angle')
     ax.legend()
