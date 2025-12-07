@@ -472,7 +472,7 @@ For better view please watch the [video here](images/demo-phase2_v2.mp4).
 
 #### Hopping and Attitude Behavior Analysis
 
-![Hopping Analysis](images/hopping_analysis_phase2_v2.png)
+![Hopping Analysis](images/hopping_analysis_phase2_v2_.png)
 
 **Plot Description:**
 1. **Top Left**: Body pitch angle showing oscillation (target alternates between 85° and 95° during ground phase for disturbance testing)
@@ -484,7 +484,7 @@ For better view please watch the [video here](images/demo-phase2_v2.mp4).
 
 #### Zoomed View (First 10 seconds)
 
-![Zoomed Analysis](images/zoomed_0_10s_phase2_v2.png)
+![Zoomed Analysis](images/zoomed_0_10s_phase2_v2_.png)
 
 ### Key Observations
 
