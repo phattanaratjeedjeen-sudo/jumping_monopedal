@@ -76,7 +76,6 @@ class DeadBeatController(Node):
 
     def pub_effort(self):
         msg = Float64MultiArray()
-        self.force = 0.0
         msg.data = [self.force]
         self.effort_publisher.publish(msg)
         self.publish_debug_state()
